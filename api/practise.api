@@ -1,0 +1,135 @@
+syntax = "v1"
+
+type WordCard {
+	ID               uint                `json:"id"` // 词语ID
+	Word             string              `json:"word"` // 词语
+	WordType         int                 `json:"word_type"` // 单词类型, 1-单词 2-短语
+	UKPhonetic       string              `json:"uk_phonetic"` // 英式音标
+	UKAudio          string              `json:"uk_audio"` // 英式音频
+	USPhonetic       string              `json:"us_phonetic"` // 美式音标
+	USAudio          string              `json:"us_audio"` // 美式音频
+	Translation      string              `json:"translation"` // 翻译(多行拼接, 兼容老前端)
+	Example          []string            `json:"example"` // 例句
+	Picture          []string            `json:"picture"` // 图片
+	PicturePosIds    []uint              `json:"picture_pos_ids"` // 图片对应ID (单词:word_pos_id, 短语:phrase_id)
+	TranslationItems []TranslationItem   `json:"translation_items"` // 拆分后的释义条目(用于编辑)
+}
+
+type TranslationItem {
+	ID          uint   `json:"id"` // word_pos.id (单词) 或 phrase.id (短语)
+	Pos         int    `json:"pos"` // 词性枚举
+	PosLabel    string `json:"pos_label"` // 词性缩写 "n." / "vt." / 短语为空
+	Translation string `json:"translation"` // 该条释义
+}
+
+type GetWordCardListReq {
+	Count  int  `form:"count,default=10"` // 单词数量
+	Random bool `form:"random"` // 是否随机
+	WordType int `form:"word_type, optional"` // 单词类型 0-都行 1-单词 2-短语
+}
+
+type GetWordCardListResp {
+	CommonReply
+	Data []*WordCard `json:"data"`
+}
+
+@server (
+	group:  practise
+	jwt:    Auth
+	prefix: api/v1/practise/study // 学习模式
+)
+service englishstudy-api {
+	@doc "学习模式/获取单词列表"
+	@handler GetStudyWordCardList
+	get /list (GetWordCardListReq) returns (GetWordCardListResp)
+
+	@doc "学习模式/完成学习"
+	@handler FinishStudy
+	post /finish (FinishStudyReq) returns (FinishStudyResp)
+}
+
+type FinishStudyReq {
+	WordID uint `json:"word_id"` // 单词ID
+	WordType int  `json:"word_type"` // 单词类型 1-单词 2-短语
+}
+
+type FinishStudyResp {
+	CommonReply
+}
+
+@server (
+	group:  practise
+	jwt:    Auth
+	prefix: api/v1/practise/review // 复习模式
+)
+service englishstudy-api {
+	@doc "复习模式/获取单词列表"
+	@handler GetReviewWordCardList
+	get /list (GetWordCardListReq) returns (GetWordCardListResp)
+
+	@doc "复习模式/完成复习"
+	@handler FinishReview
+	post /finish (FinishReviewReq) returns (FinishReviewResp)
+}
+
+type FinishReviewReq {
+	WordID    uint `json:"word_id"` // 单词ID
+	WordType  int  `json:"word_type"` // 单词类型 1-单词 2-短语
+	Operation int  `json:"operation"` // 操作 1-完成复习 2-复习失败
+	Quality   int  `json:"quality,optional,default=4"` // SM-2质量评分 3-5
+}
+
+type FinishReviewResp {
+	CommonReply
+}
+
+@server (
+	group:  practise
+	jwt:    Auth
+	prefix: api/v1/practise/strength // 强化模式
+)
+service englishstudy-api {
+	@doc "强化模式/获取单词列表"
+	@handler GetStrengthWordCardList
+	get /list (GetWordCardListReq) returns (GetWordCardListResp)
+
+	@doc "强化模式/完成强化"
+	@handler FinishStrength
+	post /finish (FinishStrengthReq) returns (FinishStrengthResp)
+}
+
+type FinishStrengthReq {
+	WordID    uint `json:"word_id"` // 单词ID
+	WordType  int  `json:"word_type"` // 单词类型 1-单词 2-短语
+	Operation int  `json:"operation"` // 操作 1-完成强化 2-强化失败
+}
+
+type FinishStrengthResp {
+	CommonReply
+}
+
+@server (
+	group:  practise
+	jwt:    Auth
+	prefix: api/v1/practise/spot // 抽查模式
+)
+service englishstudy-api {
+	@doc "抽查模式/获取单词列表"
+	@handler GetSpotWordCardList
+	get /list (GetWordCardListReq) returns (GetWordCardListResp)
+
+	@doc "抽查模式/完成抽查"
+	@handler FinishSpot
+	post /finish (FinishSpotReq) returns (FinishSpotResp)
+}
+
+type FinishSpotReq {
+	WordID    uint `json:"word_id"` // 单词ID
+	WordType  int  `json:"word_type"` // 单词类型 1-单词 2-短语
+	Operation int  `json:"operation"` // 操作 1-完成抽查 2-抽查失败
+}
+
+type FinishSpotResp {
+	CommonReply
+}
+

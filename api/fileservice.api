@@ -1,0 +1,55 @@
+syntax = "v1"
+
+@server (
+	group:  file
+	jwt:    Auth
+	prefix: api/v1/file-service
+)
+service englishstudy-api {
+	@doc "文件模块/文件上传"
+	@handler Upload
+	post /upload (FileUploadReq) returns (FileUploadResp)
+
+	@doc "文件模块/文件下载"
+	@handler Download
+	get /download (FileDownloadReq) returns (FileDownloadResp)
+
+	@doc "文件模块/搜索图片"
+	@handler SearchImages
+	get /search-images (SearchImagesReq) returns (SearchImagesResp)
+
+}
+
+type (
+	FileUploadReq {
+		Bucket string `form:"bucket"` // 桶名, 例如: englishstudy
+		Object string `form:"object"` // 对象名, xx/xx.jpg
+	}
+	FileUploadResp {
+		CommonReply
+		Path string `json:"path"` // 文件路径, 由桶名和对象名组成, 例如: englishstudy/xx/xx.jpg
+	}
+	FileDownloadReq {
+		Path string `form:"path"` // 文件路径, 例如: englishstudy/xx/xx.jpg
+	}
+	FileDownloadResp {
+		CommonReply
+		Url string `json:"url"` // 文件url, 例如: https://englishstudy.oss-cn-beijing.aliyuncs.com/xx/xx.jpg
+	}
+	SearchImagesReq {
+		Query  string `form:"query"`            // 搜索关键词
+		Offset int    `form:"offset,optional"`  // 分页偏移, 默认0
+		Count  int    `form:"count,optional"`   // 每页数量, 默认20
+	}
+	SearchImagesResp {
+		CommonReply
+		Images []ImageResult `json:"images"` // 图片结果列表
+	}
+	ImageResult {
+		ThumbUrl string `json:"thumb_url"` // 缩略图url
+		Url      string `json:"url"`       // 原图url
+		Width    int    `json:"width"`     // 图片宽度
+		Height   int    `json:"height"`    // 图片高度
+	}
+)
+

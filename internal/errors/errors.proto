@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package errors;
+
+option go_package = "./errors";
+
+import "errors/errors.proto";
+
+enum ErrorCode {
+  // 没有错误
+  NO_ERROR = 0 [ (errors.code) = 0 ];
+  // 请求参数错误
+  REQUEST_PARAM_ERROR = 1 [ (errors.code) = 1 ];
+  // 数据库查询失败
+  DATABASE_QUERY_ERROR = 2 [ (errors.code) = 2 ];
+  // 数据库更新失败
+  DATABASE_UPDATE_ERROR = 3 [ (errors.code) = 3 ];
+  // 数据库删除失败
+  DATABASE_DELETE_ERROR = 4 [ (errors.code) = 4 ];
+  // 数据库插入失败
+  DATABASE_INSERT_ERROR = 5 [ (errors.code) = 5 ];
+  // token 生成失败
+  TOKEN_GENERATE_ERROR = 6 [ (errors.code) = 6 ];
+  // token 解析失败
+  TOKEN_PARSE_ERROR = 7 [ (errors.code) = 7 ];
+  // 账号已存在
+  ACCOUNT_EXIST_ERROR = 8 [ (errors.code) = 8 ];
+  // 账号不存在
+  ACCOUNT_NOT_EXIST_ERROR = 9 [ (errors.code) = 9 ];
+  // 权限错误
+  PERMISSION_ERROR = 10 [ (errors.code) = 10 ];
+  // 数据上传失败
+  DATA_UPLOAD_ERROR = 11 [ (errors.code) = 11 ];
+  // 数据下载失败
+  DATA_DOWNLOAD_ERROR = 12 [ (errors.code) = 12 ];
+  // 微信鉴权失败
+  WX_AUTH_ERROR = 13 [ (errors.code) = 13 ];
+  // 微信获取用户信息失败
+  WX_GET_USER_INFO_ERROR = 14 [ (errors.code) = 14 ];
+  // 单词不存在
+  WORD_NOT_EXIST_ERROR = 15 [ (errors.code) = 15 ];
+  // 不支持的操作
+  NOT_SUPPORT_ERROR = 16 [ (errors.code) = 16 ];
+  // 资源生成失败
+  RESOURCE_GENERATE_ERROR = 17 [ (errors.code) = 17 ];
+}
+

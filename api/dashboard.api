@@ -1,0 +1,30 @@
+syntax = "v1"
+
+@server (
+	group:  dashboard
+	jwt:    Auth
+	prefix: api/v1/dashboard
+)
+service englishstudy-api {
+	@doc "首页/今日学习看板"
+	@handler GetDashboard
+	get / returns (GetDashboardResp)
+}
+
+type DashboardData {
+	StudyCount        int     `json:"study_count"`        // 待学习数量 (status=1)
+	ReviewCount       int     `json:"review_count"`       // 今日待复习 (status=2 且 next_review_at<=now)
+	StrengthenCount   int     `json:"strengthen_count"`   // 今日待加强 (status=3 且 next_review_at<=now)
+	SpotCount         int     `json:"spot_count"`         // 可抽查数量 (status=4)
+	TodayStudied      int     `json:"today_studied"`      // 今日已学习
+	TodayReviewed     int     `json:"today_reviewed"`     // 今日已复习
+	TodayStrengthened int     `json:"today_strengthened"` // 今日已加强
+	TotalWords        int     `json:"total_words"`        // 总词条数
+	FinishedWords     int     `json:"finished_words"`     // 已掌握数
+	ProgressRate      float64 `json:"progress_rate"`      // 掌握进度 0-1
+}
+
+type GetDashboardResp {
+	CommonReply
+	Data DashboardData `json:"data"`
+}

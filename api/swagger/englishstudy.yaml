@@ -1,0 +1,2800 @@
+basePath: /
+consumes:
+- application/json
+info:
+  title: english-study-api
+  version: v1
+paths:
+  /api/v1/dictionary/operation/export:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      operationId: dictionaryExportWord
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              file_path:
+                description: 文件路径
+                type: string
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/批量导出
+  /api/v1/dictionary/operation/import:
+    post:
+      consumes:
+      - application/json
+      operationId: dictionaryImportWord
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            file_path:
+              description: 文件路径
+              type: string
+          required:
+          - file_path
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/批量导入
+  /api/v1/dictionary/phrase/add:
+    post:
+      consumes:
+      - application/json
+      operationId: dictionaryAddWordPhrase
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            example:
+              description: 例句
+              items:
+                properties:
+                  example:
+                    description: 例句
+                    type: string
+                  translation:
+                    description: 中文翻译
+                    type: string
+                required:
+                - example
+                - translation
+                type: object
+              type: array
+            is_generate_picture:
+              description: 是否生成图片
+              type: boolean
+            phrase:
+              description: 短语
+              type: string
+            picture:
+              description: 图片
+              type: string
+            pronunciation:
+              description: 发音
+              type: string
+            translation:
+              description: 中文翻译
+              type: string
+          required:
+          - phrase
+          - translation
+          - pronunciation
+          - example
+          - picture
+          - is_generate_picture
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/添加短语
+  /api/v1/dictionary/phrase/delete:
+    delete:
+      consumes:
+      - application/json
+      operationId: dictionaryDeleteWordPhrase
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            id:
+              description: 短语ID
+              type: integer
+          required:
+          - id
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/删除短语
+  /api/v1/dictionary/phrase/detail:
+    get:
+      operationId: dictionaryGetWordPhraseDetail
+      parameters:
+      - description: 短语ID
+        in: query
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              data:
+                properties:
+                  example:
+                    description: 例句
+                    items:
+                      properties:
+                        example:
+                          description: 例句
+                          type: string
+                        translation:
+                          description: 中文翻译
+                          type: string
+                      required:
+                      - example
+                      - translation
+                      type: object
+                    type: array
+                  id:
+                    description: 短语ID
+                    type: integer
+                  phrase:
+                    description: 短语
+                    type: string
+                  picture:
+                    description: 图片
+                    type: string
+                  pronunciation:
+                    description: 发音
+                    type: string
+                  translation:
+                    description: 中文翻译
+                    type: string
+                required:
+                - id
+                - phrase
+                - translation
+                - pronunciation
+                - example
+                - picture
+                type: object
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/获取短语详情
+  /api/v1/dictionary/phrase/example/generate:
+    post:
+      consumes:
+      - application/json
+      operationId: dictionaryGeneratePhraseExample
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            id:
+              description: 短语ID
+              type: integer
+            translation:
+              description: 指定某中文翻译
+              type: string
+          required:
+          - id
+          - translation
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              example:
+                description: 例句
+                properties:
+                  example:
+                    description: 例句
+                    type: string
+                  translation:
+                    description: 中文翻译
+                    type: string
+                required:
+                - example
+                - translation
+                type: object
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/例句生成
+  /api/v1/dictionary/phrase/example/update:
+    post:
+      consumes:
+      - application/json
+      operationId: dictionaryUpdatePhraseExample
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            examples:
+              description: 例句
+              items:
+                properties:
+                  example:
+                    description: 例句
+                    type: string
+                  translation:
+                    description: 中文翻译
+                    type: string
+                required:
+                - example
+                - translation
+                type: object
+              type: array
+            id:
+              description: 短语ID
+              type: integer
+          required:
+          - id
+          - examples
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/例句更新
+  /api/v1/dictionary/phrase/list:
+    get:
+      operationId: dictionaryGetWordPhraseList
+      parameters:
+      - default: 0
+        in: query
+        name: offset
+        required: true
+        type: integer
+      - default: 10
+        in: query
+        name: limit
+        required: true
+        type: integer
+      - allowEmptyValue: true
+        in: query
+        name: orderby
+        type: string
+      - default: asc
+        in: query
+        name: sort
+        required: true
+        type: string
+      - description: 单词ID列表
+        in: query
+        items:
+          type: integer
+        name: word_id
+        required: true
+        type: array
+      - description: 短语前缀
+        in: query
+        name: phrase_prefix
+        required: true
+        type: string
+      - description: 中文翻译
+        in: query
+        name: translation
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              data:
+                items:
+                  properties:
+                    id:
+                      type: integer
+                    word:
+                      description: 单词
+                      type: string
+                  required:
+                  - id
+                  - word
+                  type: object
+                type: array
+              limit:
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              offset:
+                type: integer
+              reason:
+                description: 错误原因
+                type: string
+              total_count:
+                type: integer
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/获取短语列表
+  /api/v1/dictionary/phrase/picture:
+    post:
+      consumes:
+      - application/json
+      operationId: dictionaryGeneratePhrasePicture
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            id:
+              description: 短语ID
+              type: integer
+          required:
+          - id
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              link:
+                description: 图片链接
+                type: string
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/短语图片生成
+  /api/v1/dictionary/phrase/picture/delete:
+    post:
+      consumes:
+      - application/json
+      operationId: dictionaryDeletePhrasePicture
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            id:
+              description: 短语ID
+              type: integer
+          required:
+          - id
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/短语图片删除
+  /api/v1/dictionary/phrase/picture/update:
+    post:
+      consumes:
+      - application/json
+      operationId: dictionaryUpdatePhrasePicture
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            id:
+              description: 短语ID
+              type: integer
+            link:
+              description: 图片链接
+              type: string
+          required:
+          - id
+          - link
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/短语图片更新
+  /api/v1/dictionary/phrase/update:
+    post:
+      consumes:
+      - application/json
+      operationId: dictionaryUpdateWordPhrase
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            example:
+              description: 例句
+              items:
+                properties:
+                  example:
+                    description: 例句
+                    type: string
+                  translation:
+                    description: 中文翻译
+                    type: string
+                required:
+                - example
+                - translation
+                type: object
+              type: array
+            id:
+              description: 短语ID
+              type: integer
+            phrase:
+              description: 短语
+              type: string
+            picture:
+              description: 图片
+              type: string
+            pronunciation:
+              description: 发音
+              type: string
+            translation:
+              description: 中文翻译
+              type: string
+          required:
+          - id
+          - phrase
+          - translation
+          - pronunciation
+          - example
+          - picture
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/更新短语
+  /api/v1/dictionary/status/list:
+    get:
+      operationId: dictionaryGetWordStatusList
+      parameters:
+      - default: 0
+        in: query
+        name: offset
+        required: true
+        type: integer
+      - default: 10
+        in: query
+        name: limit
+        required: true
+        type: integer
+      - allowEmptyValue: true
+        in: query
+        name: orderby
+        type: string
+      - default: asc
+        in: query
+        name: sort
+        required: true
+        type: string
+      - description: 单词ID列表
+        in: query
+        items:
+          type: integer
+        name: word_id
+        required: true
+        type: array
+      - description: 单词类型, 1-单词 2-短语
+        in: query
+        name: word_type
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              data:
+                items:
+                  properties:
+                    id:
+                      description: 单词状态ID
+                      type: integer
+                    status:
+                      description: 状态
+                      type: integer
+                    times:
+                      description: 学习次数
+                      type: integer
+                    weight:
+                      description: 权重
+                      type: number
+                    word_id:
+                      description: 单词ID
+                      type: integer
+                    word_type:
+                      description: 单词类型, 1-单词 2-短语
+                      type: integer
+                  required:
+                  - id
+                  - word_id
+                  - word_type
+                  - status
+                  - times
+                  - weight
+                  type: object
+                type: array
+              limit:
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              offset:
+                type: integer
+              reason:
+                description: 错误原因
+                type: string
+              total_count:
+                type: integer
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/获取单词状态列表
+  /api/v1/dictionary/status/update:
+    post:
+      consumes:
+      - application/json
+      operationId: dictionaryUpdateWordStatus
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            status:
+              description: 状态
+              type: integer
+            word_id:
+              description: 单词ID
+              type: integer
+            word_type:
+              description: 单词类型, 1-单词 2-短语
+              type: integer
+          required:
+          - word_id
+          - word_type
+          - status
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/修改单词状态
+  /api/v1/dictionary/tag/list:
+    get:
+      operationId: dictionaryGetWordTagList
+      parameters:
+      - default: 0
+        in: query
+        name: offset
+        required: true
+        type: integer
+      - default: 10
+        in: query
+        name: limit
+        required: true
+        type: integer
+      - allowEmptyValue: true
+        in: query
+        name: orderby
+        type: string
+      - default: asc
+        in: query
+        name: sort
+        required: true
+        type: string
+      - description: 单词ID列表
+        in: query
+        items:
+          type: integer
+        name: word_id
+        required: true
+        type: array
+      - description: 单词类型, 1-单词 2-短语
+        in: query
+        name: word_type
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              data:
+                items:
+                  properties:
+                    id:
+                      description: 单词标签ID
+                      type: integer
+                    name:
+                      description: 标签名称
+                      type: string
+                    style:
+                      description: 展示风格
+                      type: string
+                    tag_id:
+                      description: 标签ID
+                      type: integer
+                    word_id:
+                      description: 单词ID
+                      type: integer
+                    word_type:
+                      description: 单词类型, 1-单词 2-短语
+                      type: integer
+                  required:
+                  - id
+                  - word_id
+                  - word_type
+                  - tag_id
+                  - name
+                  - style
+                  type: object
+                type: array
+              limit:
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              offset:
+                type: integer
+              reason:
+                description: 错误原因
+                type: string
+              total_count:
+                type: integer
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/获取单词标签列表
+  /api/v1/dictionary/tag/update:
+    post:
+      consumes:
+      - application/json
+      operationId: dictionaryUpdateWordTag
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            tags:
+              description: 标签ID列表
+              items:
+                type: integer
+              type: array
+            word_id:
+              description: 单词ID
+              type: integer
+            word_type:
+              description: 单词类型, 1-单词 2-短语
+              type: integer
+          required:
+          - word_id
+          - word_type
+          - tags
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/修改单词标签
+  /api/v1/dictionary/word/add:
+    post:
+      consumes:
+      - application/json
+      operationId: dictionaryAddWord
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            is_generate_picture:
+              description: 是否生成图片
+              type: boolean
+            pos:
+              description: 词性
+              items:
+                properties:
+                  example:
+                    description: 例句, 一个元素是一个句子, 通过\n分割例句和中文翻译
+                    items:
+                      properties:
+                        example:
+                          description: 例句
+                          type: string
+                        translation:
+                          description: 中文翻译
+                          type: string
+                      required:
+                      - example
+                      - translation
+                      type: object
+                    type: array
+                  exchange:
+                    additionalProperties:
+                      type: string
+                    description: 变化形式, key是变化形式简写, value是变化形式的单词, 例如单词do, p:did, d:done,
+                      i:doing, 3:does
+                    type: object
+                  id:
+                    description: 自定义的词性, id 从100W开始
+                    type: integer
+                  picture:
+                    description: 图片
+                    type: string
+                  pos:
+                    description: 词性
+                    type: integer
+                  translation:
+                    description: 中文翻译
+                    type: string
+                  word:
+                    description: 单词
+                    type: string
+                  word_id:
+                    description: 单词ID
+                    type: integer
+                required:
+                - id
+                - word_id
+                - word
+                - pos
+                - translation
+                - example
+                - picture
+                - exchange
+                type: object
+              type: array
+            uk_audio:
+              description: 英式音频
+              type: string
+            uk_phonetic:
+              description: 英式音标
+              type: string
+            us_audio:
+              description: 美式音频
+              type: string
+            us_phonetic:
+              description: 美式音标
+              type: string
+            word:
+              description: 单词
+              type: string
+          required:
+          - word
+          - uk_phonetic
+          - uk_audio
+          - us_phonetic
+          - us_audio
+          - pos
+          - is_generate_picture
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/单词添加
+  /api/v1/dictionary/word/delete:
+    post:
+      consumes:
+      - application/json
+      operationId: dictionaryDeleteWord
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            id:
+              description: 单词ID
+              type: integer
+          required:
+          - id
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/单词删除
+  /api/v1/dictionary/word/detail:
+    get:
+      operationId: dictionaryGetWordDetail
+      parameters:
+      - description: 单词ID
+        in: query
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              data:
+                properties:
+                  id:
+                    type: integer
+                  pos:
+                    description: 词性
+                    items:
+                      properties:
+                        example:
+                          description: 例句, 一个元素是一个句子, 通过\n分割例句和中文翻译
+                          items:
+                            properties:
+                              example:
+                                description: 例句
+                                type: string
+                              translation:
+                                description: 中文翻译
+                                type: string
+                            required:
+                            - example
+                            - translation
+                            type: object
+                          type: array
+                        exchange:
+                          additionalProperties:
+                            type: string
+                          description: 变化形式, key是变化形式简写, value是变化形式的单词, 例如单词do, p:did,
+                            d:done, i:doing, 3:does
+                          type: object
+                        id:
+                          description: 自定义的词性, id 从100W开始
+                          type: integer
+                        picture:
+                          description: 图片
+                          type: string
+                        pos:
+                          description: 词性
+                          type: integer
+                        translation:
+                          description: 中文翻译
+                          type: string
+                        word:
+                          description: 单词
+                          type: string
+                        word_id:
+                          description: 单词ID
+                          type: integer
+                      required:
+                      - id
+                      - word_id
+                      - word
+                      - pos
+                      - translation
+                      - example
+                      - picture
+                      - exchange
+                      type: object
+                    type: array
+                  uk_audio:
+                    description: 英式音频
+                    type: string
+                  uk_phonetic:
+                    description: 英式音标
+                    type: string
+                  us_audio:
+                    description: 美式音频
+                    type: string
+                  us_phonetic:
+                    description: 美式音标
+                    type: string
+                  word:
+                    description: 单词
+                    type: string
+                required:
+                - id
+                - word
+                - uk_phonetic
+                - uk_audio
+                - us_phonetic
+                - us_audio
+                - pos
+                type: object
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/单词详情
+  /api/v1/dictionary/word/example/generate:
+    post:
+      consumes:
+      - application/json
+      operationId: dictionaryGenerateExample
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            translation:
+              description: 指定某中文翻译
+              type: string
+            word_pos_id:
+              description: 单词词性ID
+              type: integer
+          required:
+          - word_pos_id
+          - translation
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              example:
+                description: 例句
+                properties:
+                  example:
+                    description: 例句
+                    type: string
+                  translation:
+                    description: 中文翻译
+                    type: string
+                required:
+                - example
+                - translation
+                type: object
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/例句生成
+  /api/v1/dictionary/word/example/update:
+    post:
+      consumes:
+      - application/json
+      operationId: dictionaryUpdateExample
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            examples:
+              description: 例句
+              items:
+                properties:
+                  example:
+                    description: 例句
+                    type: string
+                  translation:
+                    description: 中文翻译
+                    type: string
+                required:
+                - example
+                - translation
+                type: object
+              type: array
+            word_pos_id:
+              description: 单词词性ID
+              type: integer
+          required:
+          - word_pos_id
+          - examples
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/例句更新
+  /api/v1/dictionary/word/list:
+    get:
+      operationId: dictionaryGetWordList
+      parameters:
+      - default: 0
+        in: query
+        name: offset
+        required: true
+        type: integer
+      - default: 10
+        in: query
+        name: limit
+        required: true
+        type: integer
+      - allowEmptyValue: true
+        in: query
+        name: orderby
+        type: string
+      - default: asc
+        in: query
+        name: sort
+        required: true
+        type: string
+      - description: 单词前缀
+        in: query
+        name: word_prefix
+        required: true
+        type: string
+      - description: 词性
+        in: query
+        name: pos
+        required: true
+        type: integer
+      - description: 中文翻译
+        in: query
+        name: translation
+        required: true
+        type: string
+      - description: 音标
+        in: query
+        name: phonetic
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              data:
+                items:
+                  properties:
+                    id:
+                      type: integer
+                    word:
+                      description: 单词
+                      type: string
+                  required:
+                  - id
+                  - word
+                  type: object
+                type: array
+              limit:
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              offset:
+                type: integer
+              reason:
+                description: 错误原因
+                type: string
+              total_count:
+                type: integer
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/单词列表
+  /api/v1/dictionary/word/picture:
+    post:
+      consumes:
+      - application/json
+      operationId: dictionaryGenerateWordPicture
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            word_pos_id:
+              description: 单词词性ID
+              type: integer
+          required:
+          - word_pos_id
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              link:
+                description: 图片链接
+                type: string
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/词性图片生成
+  /api/v1/dictionary/word/picture/delete:
+    post:
+      consumes:
+      - application/json
+      operationId: dictionaryDeleteWordPicture
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            word_pos_id:
+              description: 单词词性ID
+              type: integer
+          required:
+          - word_pos_id
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/词性图片删除
+  /api/v1/dictionary/word/picture/update:
+    post:
+      consumes:
+      - application/json
+      operationId: dictionaryUpdateWordPicture
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            picture:
+              description: 图片链接
+              type: string
+            word_pos_id:
+              description: 单词词性ID
+              type: integer
+          required:
+          - word_pos_id
+          - picture
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/词性图片更新
+  /api/v1/dictionary/word/update:
+    post:
+      consumes:
+      - application/json
+      operationId: dictionaryUpdateWord
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            id:
+              description: 单词ID
+              type: integer
+            pos:
+              description: 词性
+              items:
+                properties:
+                  example:
+                    description: 例句, 一个元素是一个句子, 通过\n分割例句和中文翻译
+                    items:
+                      properties:
+                        example:
+                          description: 例句
+                          type: string
+                        translation:
+                          description: 中文翻译
+                          type: string
+                      required:
+                      - example
+                      - translation
+                      type: object
+                    type: array
+                  exchange:
+                    additionalProperties:
+                      type: string
+                    description: 变化形式, key是变化形式简写, value是变化形式的单词, 例如单词do, p:did, d:done,
+                      i:doing, 3:does
+                    type: object
+                  id:
+                    description: 自定义的词性, id 从100W开始
+                    type: integer
+                  picture:
+                    description: 图片
+                    type: string
+                  pos:
+                    description: 词性
+                    type: integer
+                  translation:
+                    description: 中文翻译
+                    type: string
+                  word:
+                    description: 单词
+                    type: string
+                  word_id:
+                    description: 单词ID
+                    type: integer
+                required:
+                - id
+                - word_id
+                - word
+                - pos
+                - translation
+                - example
+                - picture
+                - exchange
+                type: object
+              type: array
+            uk_audio:
+              description: 英式音频
+              type: string
+            uk_phonetic:
+              description: 英式音标
+              type: string
+            us_audio:
+              description: 美式音频
+              type: string
+            us_phonetic:
+              description: 美式音标
+              type: string
+            word:
+              description: 单词
+              type: string
+          required:
+          - id
+          - word
+          - uk_phonetic
+          - uk_audio
+          - us_phonetic
+          - us_audio
+          - pos
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 字典模块/单词更新
+  /api/v1/file-service/download:
+    get:
+      operationId: fileDownload
+      parameters:
+      - description: '文件路径, 例如: englishstudy/xx/xx.jpg'
+        in: query
+        name: path
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+              url:
+                description: '文件url, 例如: https://englishstudy.oss-cn-beijing.aliyuncs.com/xx/xx.jpg'
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 文件模块/文件下载
+  /api/v1/file-service/upload:
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      operationId: fileUpload
+      parameters:
+      - description: '桶名, 例如: englishstudy'
+        in: formData
+        name: bucket
+        required: true
+        type: string
+      - description: 对象名, xx/xx.jpg
+        in: formData
+        name: object
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              path:
+                description: '文件路径, 由桶名和对象名组成, 例如: englishstudy/xx/xx.jpg'
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 文件模块/文件上传
+  /api/v1/practise/review/finish:
+    post:
+      consumes:
+      - application/json
+      operationId: practiseFinishReview
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            operation:
+              description: 操作 1-完成复习 2-复习失败
+              type: integer
+            word_id:
+              description: 单词ID
+              type: integer
+            word_type:
+              description: 单词类型 1-单词 2-短语
+              type: integer
+          required:
+          - word_id
+          - word_type
+          - operation
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 复习模式/完成复习
+  /api/v1/practise/review/list:
+    get:
+      operationId: practiseGetReviewWordCardList
+      parameters:
+      - default: 10
+        description: 单词数量
+        in: query
+        name: count
+        required: true
+        type: integer
+      - description: 是否随机
+        in: query
+        name: random
+        required: true
+        type: boolean
+      - description: 单词类型 0-都行 1-单词 2-短语
+        in: query
+        name: word_type
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              data:
+                items:
+                  properties:
+                    example:
+                      description: 例句
+                      items:
+                        type: string
+                      type: array
+                    id:
+                      description: 词语ID
+                      type: integer
+                    picture:
+                      description: 图片
+                      items:
+                        type: string
+                      type: array
+                    translation:
+                      description: 翻译
+                      type: string
+                    uk_audio:
+                      description: 英式音频
+                      type: string
+                    uk_phonetic:
+                      description: 英式音标
+                      type: string
+                    us_audio:
+                      description: 美式音频
+                      type: string
+                    us_phonetic:
+                      description: 美式音标
+                      type: string
+                    word:
+                      description: 词语
+                      type: string
+                    word_type:
+                      description: 单词类型, 1-单词 2-短语
+                      type: integer
+                  required:
+                  - id
+                  - word
+                  - word_type
+                  - uk_phonetic
+                  - uk_audio
+                  - us_phonetic
+                  - us_audio
+                  - translation
+                  - example
+                  - picture
+                  type: object
+                type: array
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 复习模式/获取单词列表
+  /api/v1/practise/spot/finish:
+    post:
+      consumes:
+      - application/json
+      operationId: practiseFinishSpot
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            operation:
+              description: 操作 1-完成抽查 2-抽查失败
+              type: integer
+            word_id:
+              description: 单词ID
+              type: integer
+            word_type:
+              description: 单词类型 1-单词 2-短语
+              type: integer
+          required:
+          - word_id
+          - word_type
+          - operation
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 抽查模式/完成抽查
+  /api/v1/practise/spot/list:
+    get:
+      operationId: practiseGetSpotWordCardList
+      parameters:
+      - default: 10
+        description: 单词数量
+        in: query
+        name: count
+        required: true
+        type: integer
+      - description: 是否随机
+        in: query
+        name: random
+        required: true
+        type: boolean
+      - description: 单词类型 0-都行 1-单词 2-短语
+        in: query
+        name: word_type
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              data:
+                items:
+                  properties:
+                    example:
+                      description: 例句
+                      items:
+                        type: string
+                      type: array
+                    id:
+                      description: 词语ID
+                      type: integer
+                    picture:
+                      description: 图片
+                      items:
+                        type: string
+                      type: array
+                    translation:
+                      description: 翻译
+                      type: string
+                    uk_audio:
+                      description: 英式音频
+                      type: string
+                    uk_phonetic:
+                      description: 英式音标
+                      type: string
+                    us_audio:
+                      description: 美式音频
+                      type: string
+                    us_phonetic:
+                      description: 美式音标
+                      type: string
+                    word:
+                      description: 词语
+                      type: string
+                    word_type:
+                      description: 单词类型, 1-单词 2-短语
+                      type: integer
+                  required:
+                  - id
+                  - word
+                  - word_type
+                  - uk_phonetic
+                  - uk_audio
+                  - us_phonetic
+                  - us_audio
+                  - translation
+                  - example
+                  - picture
+                  type: object
+                type: array
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 抽查模式/获取单词列表
+  /api/v1/practise/strength/finish:
+    post:
+      consumes:
+      - application/json
+      operationId: practiseFinishStrength
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            operation:
+              description: 操作 1-完成强化 2-强化失败
+              type: integer
+            word_id:
+              description: 单词ID
+              type: integer
+            word_type:
+              description: 单词类型 1-单词 2-短语
+              type: integer
+          required:
+          - word_id
+          - word_type
+          - operation
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 强化模式/完成强化
+  /api/v1/practise/strength/list:
+    get:
+      operationId: practiseGetStrengthWordCardList
+      parameters:
+      - default: 10
+        description: 单词数量
+        in: query
+        name: count
+        required: true
+        type: integer
+      - description: 是否随机
+        in: query
+        name: random
+        required: true
+        type: boolean
+      - description: 单词类型 0-都行 1-单词 2-短语
+        in: query
+        name: word_type
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              data:
+                items:
+                  properties:
+                    example:
+                      description: 例句
+                      items:
+                        type: string
+                      type: array
+                    id:
+                      description: 词语ID
+                      type: integer
+                    picture:
+                      description: 图片
+                      items:
+                        type: string
+                      type: array
+                    translation:
+                      description: 翻译
+                      type: string
+                    uk_audio:
+                      description: 英式音频
+                      type: string
+                    uk_phonetic:
+                      description: 英式音标
+                      type: string
+                    us_audio:
+                      description: 美式音频
+                      type: string
+                    us_phonetic:
+                      description: 美式音标
+                      type: string
+                    word:
+                      description: 词语
+                      type: string
+                    word_type:
+                      description: 单词类型, 1-单词 2-短语
+                      type: integer
+                  required:
+                  - id
+                  - word
+                  - word_type
+                  - uk_phonetic
+                  - uk_audio
+                  - us_phonetic
+                  - us_audio
+                  - translation
+                  - example
+                  - picture
+                  type: object
+                type: array
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 强化模式/获取单词列表
+  /api/v1/practise/study/finish:
+    post:
+      consumes:
+      - application/json
+      operationId: practiseFinishStudy
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            word_id:
+              description: 单词ID
+              type: integer
+            word_type:
+              description: 单词类型 1-单词 2-短语
+              type: integer
+          required:
+          - word_id
+          - word_type
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 学习模式/完成学习
+  /api/v1/practise/study/list:
+    get:
+      operationId: practiseGetStudyWordCardList
+      parameters:
+      - default: 10
+        description: 单词数量
+        in: query
+        name: count
+        required: true
+        type: integer
+      - description: 是否随机
+        in: query
+        name: random
+        required: true
+        type: boolean
+      - description: 单词类型 0-都行 1-单词 2-短语
+        in: query
+        name: word_type
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              data:
+                items:
+                  properties:
+                    example:
+                      description: 例句
+                      items:
+                        type: string
+                      type: array
+                    id:
+                      description: 词语ID
+                      type: integer
+                    picture:
+                      description: 图片
+                      items:
+                        type: string
+                      type: array
+                    translation:
+                      description: 翻译
+                      type: string
+                    uk_audio:
+                      description: 英式音频
+                      type: string
+                    uk_phonetic:
+                      description: 英式音标
+                      type: string
+                    us_audio:
+                      description: 美式音频
+                      type: string
+                    us_phonetic:
+                      description: 美式音标
+                      type: string
+                    word:
+                      description: 词语
+                      type: string
+                    word_type:
+                      description: 单词类型, 1-单词 2-短语
+                      type: integer
+                  required:
+                  - id
+                  - word
+                  - word_type
+                  - uk_phonetic
+                  - uk_audio
+                  - us_phonetic
+                  - us_audio
+                  - translation
+                  - example
+                  - picture
+                  type: object
+                type: array
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 学习模式/获取单词列表
+  /api/v1/tag/add:
+    post:
+      consumes:
+      - application/json
+      operationId: tagAddTag
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            name:
+              description: 标签名称
+              type: string
+            style:
+              description: 标签样式
+              type: string
+          required:
+          - name
+          - style
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 标签模块/新增标签
+  /api/v1/tag/delete:
+    post:
+      consumes:
+      - application/json
+      operationId: tagDeleteTag
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            id:
+              description: 标签ID
+              type: integer
+          required:
+          - id
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 标签模块/删除标签
+  /api/v1/tag/detail:
+    get:
+      operationId: tagGetTagDetail
+      parameters:
+      - description: 标签ID
+        in: query
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              data:
+                properties:
+                  id:
+                    description: 标签ID
+                    type: integer
+                  name:
+                    description: 标签名称
+                    type: string
+                  style:
+                    description: 标签样式
+                    type: string
+                required:
+                - id
+                - name
+                - style
+                type: object
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 标签模块/获取标签详情
+  /api/v1/tag/list:
+    get:
+      operationId: tagGetTagList
+      parameters:
+      - default: 0
+        in: query
+        name: offset
+        required: true
+        type: integer
+      - default: 10
+        in: query
+        name: limit
+        required: true
+        type: integer
+      - allowEmptyValue: true
+        in: query
+        name: orderby
+        type: string
+      - default: asc
+        in: query
+        name: sort
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              data:
+                items:
+                  properties:
+                    id:
+                      description: 标签ID
+                      type: integer
+                    name:
+                      description: 标签名称
+                      type: string
+                    style:
+                      description: 标签样式
+                      type: string
+                  required:
+                  - id
+                  - name
+                  - style
+                  type: object
+                type: array
+              limit:
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              offset:
+                type: integer
+              reason:
+                description: 错误原因
+                type: string
+              total_count:
+                type: integer
+            type: object
+      schemes:
+      - https
+      summary: 标签模块/获取标签列表
+  /api/v1/tag/update:
+    post:
+      consumes:
+      - application/json
+      operationId: tagUpdateTag
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            id:
+              description: 标签ID
+              type: integer
+            name:
+              description: 标签名称
+              type: string
+            style:
+              description: 标签样式
+              type: string
+          required:
+          - id
+          - name
+          - style
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 标签模块/更新标签
+  /api/v1/user/{id}:
+    get:
+      operationId: userGetUserInfo
+      parameters:
+      - description: 路径 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              data:
+                description: 用户信息
+                properties:
+                  account:
+                    type: string
+                  avatar:
+                    description: 头像
+                    type: string
+                  email:
+                    type: string
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  phone:
+                    type: string
+                required:
+                - id
+                - name
+                - account
+                - phone
+                - email
+                - avatar
+                type: object
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 用户模块/获取用户信息
+    put:
+      consumes:
+      - application/json
+      operationId: userUpdateUserInfo
+      parameters:
+      - description: 路径 ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            data:
+              description: 用户信息
+              properties:
+                account:
+                  type: string
+                avatar:
+                  description: 头像
+                  type: string
+                email:
+                  type: string
+                id:
+                  type: integer
+                name:
+                  type: string
+                phone:
+                  type: string
+              required:
+              - id
+              - name
+              - account
+              - phone
+              - email
+              - avatar
+              type: object
+          required:
+          - data
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 用户模块/更新用户信息
+  /api/v1/user/login:
+    post:
+      consumes:
+      - application/json
+      operationId: userLogin
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            account:
+              description: 账号
+              type: string
+            password:
+              description: 密码
+              type: string
+          required:
+          - account
+          - password
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              data:
+                description: 用户信息
+                properties:
+                  account:
+                    type: string
+                  avatar:
+                    description: 头像
+                    type: string
+                  email:
+                    type: string
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  phone:
+                    type: string
+                required:
+                - id
+                - name
+                - account
+                - phone
+                - email
+                - avatar
+                type: object
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+              token:
+                description: 访问令牌
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 用户模块/用户登录
+  /api/v1/user/login/wx:
+    post:
+      consumes:
+      - application/json
+      operationId: userLoginWx
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            code:
+              description: 微信登录code
+              type: string
+          required:
+          - code
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              data:
+                description: 用户信息
+                properties:
+                  account:
+                    type: string
+                  avatar:
+                    description: 头像
+                    type: string
+                  email:
+                    type: string
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  phone:
+                    type: string
+                required:
+                - id
+                - name
+                - account
+                - phone
+                - email
+                - avatar
+                type: object
+              message:
+                description: 错误信息
+                type: string
+              open_id:
+                description: 微信openid, 当错误码为9时返回
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+              token:
+                description: 访问令牌
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 用户模块/用户登录/微信登录
+  /api/v1/user/register:
+    post:
+      consumes:
+      - application/json
+      operationId: userRegister
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            account:
+              description: 账号
+              type: string
+            email:
+              description: 邮箱
+              type: string
+            name:
+              description: 用户名
+              type: string
+            password:
+              description: 密码
+              type: string
+            phone:
+              description: 手机号
+              type: string
+          required:
+          - account
+          - password
+          - name
+          - phone
+          - email
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 用户模块/用户注册
+  /api/v1/user/register/wx:
+    post:
+      consumes:
+      - application/json
+      operationId: userRegisterWx
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          properties:
+            avatar:
+              description: 头像
+              type: string
+            name:
+              description: 用户名
+              type: string
+            open_id:
+              description: 微信openid
+              type: string
+          required:
+          - open_id
+          - name
+          - avatar
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+          schema:
+            properties:
+              code:
+                description: 状态码
+                type: integer
+              data:
+                description: 用户信息
+                properties:
+                  account:
+                    type: string
+                  avatar:
+                    description: 头像
+                    type: string
+                  email:
+                    type: string
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  phone:
+                    type: string
+                required:
+                - id
+                - name
+                - account
+                - phone
+                - email
+                - avatar
+                type: object
+              message:
+                description: 错误信息
+                type: string
+              reason:
+                description: 错误原因
+                type: string
+              token:
+                description: 访问令牌
+                type: string
+            type: object
+      schemes:
+      - https
+      summary: 用户模块/微信注册用户
+produces:
+- application/json
+schemes:
+- https
+swagger: "2.0"
+x-date: "2025-11-28 10:43:00"
+x-description: This is a goctl generated swagger file.
+x-github: https://github.com/zeromicro/go-zero
+x-go-zero-doc: https://go-zero.dev/
+x-goctl-version: 1.8.5

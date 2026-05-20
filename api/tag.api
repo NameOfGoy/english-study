@@ -1,0 +1,81 @@
+syntax = "v1"
+
+@server (
+	group:  tag
+	jwt:    Auth
+	prefix: api/v1/tag
+)
+service englishstudy-api {
+	@doc "标签模块/新增标签"
+	@handler AddTag
+	post /add (AddTagReq) returns (AddTagResp)
+
+	@doc "标签模块/删除标签"
+	@handler DeleteTag
+	post /delete (DeleteTagReq) returns (DeleteTagResp)
+
+	@doc "标签模块/获取标签列表"
+	@handler GetTagList
+	get /list (GetTagListReq) returns (GetTagListResp)
+
+	@doc "标签模块/获取标签详情"
+	@handler GetTagDetail
+	get /detail (GetTagDetailReq) returns (GetTagDetailResp)
+
+	@doc "标签模块/更新标签"
+	@handler UpdateTag
+	post /update (UpdateTagReq) returns (UpdateTagResp)
+}
+
+type Tag {
+	ID    uint   `json:"id"` // 标签ID
+	Name  string `json:"name"` // 标签名称
+	Style string `json:"style"` // 标签样式
+}
+
+type AddTagReq {
+	Name  string `json:"name"` // 标签名称
+	Style string `json:"style"` // 标签样式
+}
+
+type AddTagResp {
+	CommonReply
+}
+
+type DeleteTagReq {
+	ID uint `json:"id"` // 标签ID
+}
+
+type DeleteTagResp {
+	CommonReply
+}
+
+type GetTagListReq {
+	PageReq
+}
+
+type GetTagListResp {
+	CommonReply
+	PageReply
+	Data []*Tag `json:"data"`
+}
+
+type GetTagDetailReq {
+	ID uint `form:"id"` // 标签ID
+}
+
+type GetTagDetailResp {
+	CommonReply
+	Data Tag `json:"data"`
+}
+
+type UpdateTagReq {
+	ID    uint   `json:"id"` // 标签ID
+	Name  string `json:"name"` // 标签名称
+	Style string `json:"style"` // 标签样式
+}
+
+type UpdateTagResp {
+	CommonReply
+}
+

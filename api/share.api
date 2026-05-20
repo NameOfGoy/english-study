@@ -1,0 +1,89 @@
+syntax = "v1"
+
+@server (
+	group:  share
+	jwt:    Auth
+	prefix: api/v1/share
+)
+service englishstudy-api {
+	@doc "分享/生成分享码"
+	@handler GenerateShare
+	post /generate (GenerateShareReq) returns (GenerateShareResp)
+
+	@doc "分享/预览分享码内容"
+	@handler PreviewShare
+	post /preview (PreviewShareReq) returns (PreviewShareResp)
+
+	@doc "分享/获取分享中某个词的详情"
+	@handler GetShareWordDetail
+	post /word-detail (GetShareWordDetailReq) returns (GetShareWordDetailResp)
+
+	@doc "分享/导入分享码"
+	@handler ImportShare
+	post /import (ImportShareReq) returns (ImportShareResp)
+}
+
+type GenerateShareReq {
+	ShareType int    `json:"share_type"`         // 0-全部 1-按标签
+	WordType  int    `json:"word_type"`          // 0-全部 1-单词 2-短语
+	TagIDs    []uint `json:"tag_ids,optional"`   // share_type=1 时使用
+}
+
+type GenerateShareResp {
+	CommonReply
+	Token     string `json:"token"`      // 分享码
+	ExpiresAt int64  `json:"expires_at"` // 过期时间(unix秒)
+}
+
+type PreviewShareReq {
+	Token string `json:"token"`
+}
+
+type SharePreviewTag {
+	Name  string `json:"name"`
+	Style string `json:"style"`
+}
+
+type ShareWordItem {
+	ID          uint     `json:"id"`           // A 用户里的 id
+	WordType    int      `json:"word_type"`    // 1-单词 2-短语
+	Text        string   `json:"text"`         // 单词或短语
+	Translation string   `json:"translation"`  // 中文翻译（简版）
+	TagNames    []string `json:"tag_names"`    // 该词关联的标签名
+}
+
+type PreviewShareResp {
+	CommonReply
+	FromUsername string            `json:"from_username"` // A 的用户名
+	WordCount    int               `json:"word_count"`    // 单词总数
+	PhraseCount  int               `json:"phrase_count"`  // 短语总数
+	Items        []ShareWordItem   `json:"items"`         // 全部条目
+	Tags         []SharePreviewTag `json:"tags"`          // 整体涉及的标签
+	ExpiresAt    int64             `json:"expires_at"`    // 过期时间
+}
+
+type GetShareWordDetailReq {
+	Token    string `json:"token"`
+	WordID   uint   `json:"word_id"`
+	WordType int    `json:"word_type"` // 1-单词 2-短语
+}
+
+type GetShareWordDetailResp {
+	CommonReply
+	Word   *Word        `json:"word,optional"`
+	Phrase *WordPhrase  `json:"phrase,optional"`
+}
+
+type ImportShareReq {
+	Token      string `json:"token"`
+	ImportTags bool   `json:"import_tags,optional"` // 是否同步导入标签
+}
+
+type ImportShareResp {
+	CommonReply
+	WordImported   int `json:"word_imported"`   // 实际导入单词数
+	PhraseImported int `json:"phrase_imported"` // 实际导入短语数
+	WordSkipped    int `json:"word_skipped"`    // 已存在跳过单词数
+	PhraseSkipped  int `json:"phrase_skipped"`  // 已存在跳过短语数
+	TagImported    int `json:"tag_imported"`    // 新建标签数
+}

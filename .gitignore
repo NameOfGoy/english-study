@@ -1,0 +1,17 @@
+.idea/
+.trae/
+.vscode/
+.claude/
+*.exe
+
+# 敏感配置 - 不可提交
+etc/englishstudy-api.yaml
+etc/*.yaml
+etc/*.yml
+*.env
+
+# 前端独立仓库
+English-Study-UI/
+
+# Claude superpowers 工作文件
+docs/superpowers/
