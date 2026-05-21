@@ -77,6 +77,8 @@ func main() {
 	wordTranslation := wordtranslationimpl.NewGenerator(llmInstance)
 
 	dict := dictionaryimpl.NewDictionaryImpl(mi, m, exampleGenerator, wordPicture, wordPronounce, wordTranslation)
+	// 进程退出前等待后台例句生成等异步任务完成, 避免半写状态
+	defer dict.WaitBackground()
 
 	ctx := svc.NewServiceContext(c, vc, m, mi, wxc, dict, wordPicture, exampleGenerator)
 	handler.RegisterHandlers(server, ctx)

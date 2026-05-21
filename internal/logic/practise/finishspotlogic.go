@@ -3,6 +3,7 @@ package practise
 import (
 	"context"
 	"english-study/internal/errors"
+	"english-study/internal/model/bean"
 	"english-study/internal/utils"
 	"time"
 
@@ -10,6 +11,8 @@ import (
 	"english-study/internal/types"
 
 	"github.com/zeromicro/go-zero/core/logx"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type FinishSpotLogic struct {
@@ -29,33 +32,42 @@ func NewFinishSpotLogic(ctx context.Context, svcCtx *svc.ServiceContext, ui *uti
 }
 
 func (l *FinishSpotLogic) FinishSpot(req *types.FinishSpotReq) (resp *types.FinishSpotResp, err error) {
+	err = l.svcCtx.Model.DB.WithContext(l.ctx).Transaction(func(tx *gorm.DB) error {
+		var ws bean.WordStatus
+		if e := tx.Clauses(clause.Locking{Strength: "UPDATE"}).
+			Where("user_id = ? AND word_id = ? AND word_type = ? AND status = ?",
+				l.ui.ID, req.WordID, req.WordType, types.WordStatusFinish).
+			Take(&ws).Error; e != nil {
+			return errors.ErrorDatabaseQueryError("查询单词状态失败").WithCause(e)
+		}
+		statusBefore := ws.Status
+		newStatus, ferr := statusTransferFSM(&ws, req.Operation, &Rule{})
+		if ferr != nil {
+			return errors.ErrorDatabaseUpdateError("状态转换失败").WithCause(ferr)
+		}
+		ws.Status = newStatus
+		if statusBefore != ws.Status {
+			ws.Times = 0
+			ws.Interval = 1
+			ws.Repetitions = 0
+			ws.NextReviewAt = time.Now().Truncate(24 * time.Hour).Add(24 * time.Hour)
+		}
+		ws.StudyTime = time.Now()
 
-	// 查出单词状态
-	wsg := l.svcCtx.Model.Gen.WordStatus
-	ws, err := wsg.WithContext(l.ctx).Where(
-		wsg.UserID.Eq(l.ui.ID),
-		wsg.WordID.Eq(req.WordID),
-		wsg.WordType.Eq(req.WordType),
-		wsg.Status.Eq(types.WordStatusFinish),
-	).Take()
+		if e := tx.Model(&bean.WordStatus{}).Where("id = ?", ws.ID).Updates(map[string]interface{}{
+			"status":         ws.Status,
+			"times":          ws.Times,
+			"interval":       ws.Interval,
+			"repetitions":    ws.Repetitions,
+			"next_review_at": ws.NextReviewAt,
+			"study_time":     ws.StudyTime,
+		}).Error; e != nil {
+			return errors.ErrorDatabaseUpdateError("更新单词状态失败").WithCause(e)
+		}
+		return nil
+	})
 	if err != nil {
-		return nil, errors.ErrorDatabaseQueryError("查询单词状态失败").WithCause(err)
+		return nil, err
 	}
-	status := ws.Status
-	ws.Status = statusTransferFSM(ws, req.Operation, &Rule{}) // 状态转换
-	if status != ws.Status {
-		ws.Times = 0 // 状态变更，学习次数重置为0
-		// Finish→Strengthen: 重置SRS，间隔=1天
-		ws.Interval = 1
-		ws.Repetitions = 0
-		ws.NextReviewAt = time.Now().Truncate(24 * time.Hour).Add(24 * time.Hour)
-	}
-	ws.StudyTime = time.Now()
-
-	_, err = wsg.WithContext(l.ctx).Where(wsg.ID.Eq(ws.ID)).Updates(ws)
-	if err != nil {
-		return nil, errors.ErrorDatabaseUpdateError("更新单词状态失败").WithCause(err)
-	}
-
 	return &types.FinishSpotResp{}, nil
 }

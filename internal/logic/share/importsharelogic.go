@@ -12,6 +12,7 @@ import (
 
 	"github.com/zeromicro/go-zero/core/logx"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type ImportShareLogic struct {
@@ -382,8 +383,9 @@ func (l *ImportShareLogic) importTags(sourceUserID uint, sourceWordIDs, sourcePh
 		})
 	}
 	if len(newRelations) > 0 {
-		// 用 ON CONFLICT DO NOTHING 防重复
+		// 必须用 ON CONFLICT DO NOTHING 兑现注释承诺, 否则同名词条二次导入会以 500 返回
 		if err := l.svcCtx.Model.DB.WithContext(l.ctx).
+			Clauses(clause.OnConflict{DoNothing: true}).
 			Create(&newRelations).Error; err != nil {
 			logx.Errorf("插入 B 端 word_tags 失败: %v", err)
 		}

@@ -112,7 +112,12 @@ func (d *DictionaryImpl) AddWord(ctx context.Context, word string, triggerUserID
 		return err
 	}
 	// 异步生成例句, 完成后 UPDATE 回主词典 word_pos 表 + 触发用户表回填
-	go d.generateExamplesAsync(w, triggerUserID)
+	// WaitGroup 让 graceful shutdown 能等待这些后台任务完成, 避免半写状态
+	d.bgWG.Add(1)
+	go func() {
+		defer d.bgWG.Done()
+		d.generateExamplesAsync(w, triggerUserID)
+	}()
 	return nil
 }
 

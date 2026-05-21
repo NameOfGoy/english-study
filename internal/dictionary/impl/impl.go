@@ -23,6 +23,9 @@ type DictionaryImpl struct {
 	// 并发控制
 	adding map[string]struct{}
 	lock   sync.RWMutex
+
+	// 后台异步任务追踪 (例句生成等), 优雅关停时 Wait
+	bgWG sync.WaitGroup
 }
 
 func NewDictionaryImpl(o oss.OSS, m *model.Model, examGenerator wordexample.WordExample, wordPicGenerator wordpicture.Picture, wordPronounceGenerator wordpronounce.WordPronounce, wordTranslationGenerator wordtranslation.WordTranslation) *DictionaryImpl {
@@ -35,6 +38,11 @@ func NewDictionaryImpl(o oss.OSS, m *model.Model, examGenerator wordexample.Word
 		wordTranslationGenerator: wordTranslationGenerator,
 		adding:                   make(map[string]struct{}),
 	}
+}
+
+// WaitBackground 等所有后台例句生成 goroutine 完成, 用于优雅关停
+func (d *DictionaryImpl) WaitBackground() {
+	d.bgWG.Wait()
 }
 
 func (d *DictionaryImpl) IsWordAdding(ctx context.Context, word string) bool {

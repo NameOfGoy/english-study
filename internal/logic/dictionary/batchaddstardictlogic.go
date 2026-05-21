@@ -27,11 +27,22 @@ func NewBatchAddStardictLogic(ctx context.Context, svcCtx *svc.ServiceContext, u
 	}
 }
 
+// maxBatchAddItems 单次请求上限, 防止前端误传 10k 项
+const maxBatchAddItems = 500
+
+// batchAddConcurrency 后台 goroutine 并发上限, 防止 LLM/OSS 连接耗尽
+const batchAddConcurrency = 10
+
 func (l *BatchAddStardictLogic) BatchAddStardict(req *types.BatchAddStardictReq) (*types.BatchAddStardictResp, error) {
 	if len(req.Items) == 0 {
 		return &types.BatchAddStardictResp{Submitted: 0}, nil
 	}
+	if len(req.Items) > maxBatchAddItems {
+		req.Items = req.Items[:maxBatchAddItems]
+	}
 
+	// 用 buffered channel 当信号量, 限制后台 goroutine 总并发数
+	sem := make(chan struct{}, batchAddConcurrency)
 	submitted := 0
 	for _, item := range req.Items {
 		sw := strings.TrimSpace(item.Sw)
@@ -43,6 +54,8 @@ func (l *BatchAddStardictLogic) BatchAddStardict(req *types.BatchAddStardictReq)
 		ui := l.ui
 		svcCtx := l.svcCtx
 		go func(sw string, wt int) {
+			sem <- struct{}{}        // 阻塞直到有空槽
+			defer func() { <-sem }() // 完成后释放
 			bgCtx := context.Background()
 			if wt == 2 {
 				logic := NewAddWordPhraseLogic(bgCtx, svcCtx, ui)
