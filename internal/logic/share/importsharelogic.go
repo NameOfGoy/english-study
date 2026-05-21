@@ -280,9 +280,12 @@ func (l *ImportShareLogic) importTags(sourceUserID uint, sourceWordIDs, sourcePh
 		tagNames = append(tagNames, t.Tag)
 	}
 	var bExistTags []bean.Tag
-	l.svcCtx.Model.DB.WithContext(l.ctx).
+	if err := l.svcCtx.Model.DB.WithContext(l.ctx).
 		Where("user_id = ? AND tag IN ?", l.ui.ID, tagNames).
-		Find(&bExistTags)
+		Find(&bExistTags).Error; err != nil {
+		// 查不到 B 端已有标签就当 0 处理, 后面会全部新建; 比静默重复创建更安全
+		logx.Errorf("查 B 已有标签失败: %v", err)
+	}
 	bTagByName := map[string]uint{}
 	for _, t := range bExistTags {
 		bTagByName[t.Tag] = t.ID

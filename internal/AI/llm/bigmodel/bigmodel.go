@@ -88,12 +88,9 @@ func (b *BigModelLLM) StreamChat(ctx context.Context, question string, opts ...l
 		// 调用SDK的StreamChat方法
 		err := b.client.StreamChat(ctx, model, question, callback)
 		if err != nil {
+			// 不要把 error 字符串当 token 发出去, 否则消费方会把 "Error: xxx" 当 AI 答案渲染给用户.
+			// 流式错误目前只 log; LLM 接口需要返回 error 时调用方应改用 Chat 而非 StreamChat.
 			log.Printf("BigModel StreamChat error: %v", err)
-			// 发送错误信息到channel
-			select {
-			case answerChan <- fmt.Sprintf("Error: %v", err):
-			case <-ctx.Done():
-			}
 		}
 	}()
 

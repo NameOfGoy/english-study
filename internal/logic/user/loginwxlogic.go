@@ -7,10 +7,10 @@ import (
 	"english-study/internal/types"
 	"english-study/internal/utils"
 	e "errors"
-	"fmt"
+	"time"
+
 	"github.com/zeromicro/go-zero/core/logx"
 	"gorm.io/gorm"
-	"time"
 )
 
 type LoginWxLogic struct {
@@ -40,7 +40,13 @@ func (l *LoginWxLogic) LoginWx(req *types.UserLoginWxReq) (resp *types.UserLogin
 	user, err := l.svcCtx.Model.Gen.User.Where(l.svcCtx.Model.Gen.User.WxOpenID.Eq(openid)).WithContext(l.ctx).First()
 	if err != nil {
 		if e.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.ErrorAccountNotExistError("用户不存在").WithCause(fmt.Errorf("%s", openid))
+			// 不把完整 openid 写进 cause 或日志 (持久 PII), 只 log 前缀; 方便回查但日志泄漏后也不能精准定位个人
+			masked := openid
+			if len(masked) > 6 {
+				masked = masked[:6] + "***"
+			}
+			logx.WithContext(l.ctx).Infof("微信登录: openid 未注册 openid_prefix=%s", masked)
+			return nil, errors.ErrorAccountNotExistError("用户不存在")
 		}
 		return nil, errors.ErrorDatabaseQueryError("查询用户失败").WithCause(err)
 	}

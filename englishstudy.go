@@ -19,6 +19,7 @@ import (
 
 	"english-study/internal/config"
 	"english-study/internal/handler"
+	"english-study/internal/handler/middleware"
 	"english-study/internal/svc"
 
 	"github.com/zeromicro/go-zero/core/conf"
@@ -81,6 +82,8 @@ func main() {
 	defer dict.WaitBackground()
 
 	ctx := svc.NewServiceContext(c, vc, m, mi, wxc, dict, wordPicture, exampleGenerator)
+	// 全局给所有响应加安全头 (X-Content-Type-Options 等)
+	server.Use(middleware.SecurityHeaders)
 	handler.RegisterHandlers(server, ctx)
 
 	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)

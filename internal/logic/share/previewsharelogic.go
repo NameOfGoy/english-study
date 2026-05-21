@@ -30,7 +30,7 @@ func NewPreviewShareLogic(ctx context.Context, svcCtx *svc.ServiceContext, ui *u
 }
 
 func (l *PreviewShareLogic) PreviewShare(req *types.PreviewShareReq) (*types.PreviewShareResp, error) {
-	payload, err := DecodeToken(req.Token, l.svcCtx.Config.Auth.AccessSecret)
+	payload, err := DecodeToken(req.Token, DeriveShareSecret(l.svcCtx.Config.Auth.AccessSecret))
 	if err != nil {
 		return nil, errors.ErrorRequestParamError("分享码无效或已过期").WithCause(err)
 	}
@@ -99,14 +99,17 @@ func (l *PreviewShareLogic) PreviewShare(req *types.PreviewShareReq) (*types.Pre
 		}
 		if len(tagNames) > 0 {
 			var tags []bean.Tag
-			l.svcCtx.Model.DB.WithContext(l.ctx).
+			if err := l.svcCtx.Model.DB.WithContext(l.ctx).
 				Where("user_id = ? AND tag IN ?", sourceUserID, tagNames).
-				Find(&tags)
-			for _, t := range tags {
-				resp.Tags = append(resp.Tags, types.SharePreviewTag{
-					Name:  t.Tag,
-					Style: t.Style,
-				})
+				Find(&tags).Error; err != nil {
+				logx.WithContext(l.ctx).Errorf("查源用户标签失败: %v", err)
+			} else {
+				for _, t := range tags {
+					resp.Tags = append(resp.Tags, types.SharePreviewTag{
+						Name:  t.Tag,
+						Style: t.Style,
+					})
+				}
 			}
 		}
 	}
