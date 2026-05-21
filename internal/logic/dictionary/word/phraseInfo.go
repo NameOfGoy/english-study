@@ -7,6 +7,7 @@ import (
 	"english-study/internal/aiapplication/wordpicture"
 	"english-study/internal/dictionary"
 	"english-study/internal/model/bean"
+	"english-study/internal/oss"
 	"english-study/internal/svc"
 	"english-study/internal/types"
 	"errors"
@@ -67,9 +68,24 @@ func (pi *PhraseInfo) getPhraseFromDictionary(ctx context.Context, phrase string
 		return pi.svc.Dictionary.GetPhrase(ctx, phrase) // 新增成功, 则返回短语
 	}
 	if errors.Is(err, dictionary.ErrWordAdding) { // 短语正在添加中, 则等待
+		// 带 ctx 超时和 5s 总等待上限, 防止后台 goroutine panic 导致这里永久 spin
+		deadline := time.NewTimer(5 * time.Second)
+		defer deadline.Stop()
+		tick := time.NewTicker(200 * time.Millisecond)
+		defer tick.Stop()
 		for pi.svc.Dictionary.IsWordAdding(ctx, phrase) {
-			time.Sleep(time.Millisecond * 1000)
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-deadline.C:
+				return nil, fmt.Errorf("等待添加短语超时: %s", phrase)
+			case <-tick.C:
+			}
 		}
+		if w, gerr := pi.svc.Dictionary.GetPhrase(ctx, phrase); gerr == nil {
+			return w, nil
+		}
+		time.Sleep(100 * time.Millisecond)
 		return pi.svc.Dictionary.GetPhrase(ctx, phrase)
 	}
 	if errors.Is(err, dictionary.ErrWordExist) {
@@ -112,9 +128,10 @@ func (pi *PhraseInfo) GeneratePicture(ctx context.Context, phrase string) (link 
 	if err != nil {
 		return "", fmt.Errorf("generate picture failed, phrase: %s, err: %w", phrase, err)
 	}
+	// phrase 含空格/标点, 在 key 中需要 sanitize, 防止 ../ 越权
 	path, err := pi.svc.Oss.Upload(ctx,
 		types.OssBucket,
-		fmt.Sprintf("picture/user_phrase_%d/%s/%d.png", pi.userId, phrase, time.Now().Unix()),
+		fmt.Sprintf("picture/user_phrase_%d/%s/%d.png", pi.userId, oss.SafeKeyPart(phrase), time.Now().Unix()),
 		io.NopCloser(bytes.NewReader(p)), int64(len(p)))
 	if err != nil {
 		return "", fmt.Errorf("upload picture failed, phrase: %s, err: %w", phrase, err)

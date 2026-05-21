@@ -200,8 +200,8 @@ func (d *DictionaryImpl) generatePronounceLink(ctx context.Context, word string,
 		logx.Errorf("generate word [%s] pronounce of accent [%s] link failed, err: %v", word, accent, err)
 		return ""
 	}
-	// 上传音频数据
-	obj := fmt.Sprintf("pronounce/%s/%s.mp3", word, accent)
+	// 上传音频数据; word 走过 AI 兜底可能含非法字符, sanitize 防路径越权
+	obj := fmt.Sprintf("pronounce/%s/%s.mp3", oss.SafeKeyPart(word), oss.SafeKeyPart(accent))
 	link, err := d.o.Upload(ctx, types.OssBucket, obj, io.NopCloser(bytes.NewReader(audio)), int64(len(audio)), oss.WithContentType("audio/mpeg"))
 	if err != nil {
 		logx.Errorf("upload word [%s] pronounce of accent [%s] link failed, err: %v", word, accent, err)
@@ -237,8 +237,8 @@ func (d *DictionaryImpl) generateWordPictureLink(ctx context.Context, word strin
 		logx.Errorf("generate pic for word [%s] pos [%d] exam failed, err: %v", word, pos, err)
 		return ""
 	}
-	// 上传图片数据
-	obj := fmt.Sprintf("picture/mainword/%s/%d.png", word, pos) // 主表图片
+	// 上传图片数据; word 走过 AI 兜底可能含非法字符, sanitize 防路径越权
+	obj := fmt.Sprintf("picture/mainword/%s/%d.png", oss.SafeKeyPart(word), pos) // 主表图片
 	link, err := d.o.Upload(ctx, types.OssBucket, obj, io.NopCloser(bytes.NewReader(pic)), int64(len(pic)))
 	if err != nil {
 		logx.Errorf("upload word [%s] pos [%d] picture link failed, err: %v", word, pos, err)

@@ -2,24 +2,25 @@ package model
 
 import (
 	"context"
-	"database/sql"
 	"english-study/internal/model/bean"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
 func (m *Model) InsertWord(ctx context.Context, word *bean.Word, userId *uint) (err error) {
-	// 开事务
-	tx := m.DB.Begin(&sql.TxOptions{Isolation: sql.LevelSerializable}) // 防超高并发
+	// READ COMMITTED 即可：word 表有 unique 约束防止并发重复，无需 SERIALIZABLE 的谓词锁开销
+	tx := m.DB.Begin()
 	defer func() {
 		if err != nil {
 			if txe := tx.Rollback().Error; txe != nil {
 				logx.Errorf("Rollback failed: %v", txe)
 			}
-		} else {
-			if txe := tx.Commit().Error; txe != nil {
-				logx.Errorf("Commit failed: %v", txe)
-			}
+			return
+		}
+		// commit 出错必须传回给调用方, 否则会出现"以为成功实际丢数据"
+		if txe := tx.Commit().Error; txe != nil {
+			logx.Errorf("Commit failed: %v", txe)
+			err = txe
 		}
 	}()
 	if err = tx.Table(word.UserTableName(userId)).WithContext(ctx).Create(word).Error; err != nil {

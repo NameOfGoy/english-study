@@ -31,7 +31,7 @@ func NewImportShareLogic(ctx context.Context, svcCtx *svc.ServiceContext, ui *ut
 }
 
 func (l *ImportShareLogic) ImportShare(req *types.ImportShareReq) (*types.ImportShareResp, error) {
-	payload, err := DecodeToken(req.Token, l.svcCtx.Config.Auth.AccessSecret)
+	payload, err := DecodeToken(req.Token, DeriveShareSecret(l.svcCtx.Config.Auth.AccessSecret))
 	if err != nil {
 		return nil, errors.ErrorRequestParamError("分享码无效或已过期").WithCause(err)
 	}
@@ -103,8 +103,11 @@ func (l *ImportShareLogic) importWords(sourceUserID uint, sourceWordIDs []uint) 
 		wordTexts = append(wordTexts, w.Word)
 	}
 	var existing []string
-	l.svcCtx.Model.DB.WithContext(l.ctx).Table(dstWordTable).
-		Where("word IN ?", wordTexts).Pluck("word", &existing)
+	// 若 Pluck 报错则视为"无法确认是否重复", 安全起见全部认为已存在并跳过, 避免脏数据
+	if err := l.svcCtx.Model.DB.WithContext(l.ctx).Table(dstWordTable).
+		Where("word IN ?", wordTexts).Pluck("word", &existing).Error; err != nil {
+		return 0, 0, errors.ErrorDatabaseQueryError("查 B 已有单词失败").WithCause(err)
+	}
 	existSet := toSet(existing)
 
 	imported, skipped := 0, 0
@@ -182,8 +185,10 @@ func (l *ImportShareLogic) importPhrases(sourceUserID uint, sourcePhraseIDs []ui
 		phraseTexts = append(phraseTexts, p.Phrase)
 	}
 	var existing []string
-	l.svcCtx.Model.DB.WithContext(l.ctx).Table(dstTable).
-		Where("phrase IN ?", phraseTexts).Pluck("phrase", &existing)
+	if err := l.svcCtx.Model.DB.WithContext(l.ctx).Table(dstTable).
+		Where("phrase IN ?", phraseTexts).Pluck("phrase", &existing).Error; err != nil {
+		return 0, 0, errors.ErrorDatabaseQueryError("查 B 已有短语失败").WithCause(err)
+	}
 	existSet := toSet(existing)
 
 	imported, skipped := 0, 0

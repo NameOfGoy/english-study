@@ -7,6 +7,7 @@ import (
 	"english-study/internal/aiapplication/wordpicture"
 	"english-study/internal/dictionary"
 	"english-study/internal/model/bean"
+	"english-study/internal/oss"
 	"english-study/internal/svc"
 	"english-study/internal/types"
 	"fmt"
@@ -85,9 +86,25 @@ func (wi *WordInfo) getWordFromDictionary(ctx context.Context, word string) (*ty
 		return wi.svc.Dictionary.GetWord(ctx, word) // 新增成功, 则返回单词
 	}
 	if errors.Is(err, dictionary.ErrWordAdding) { // 单词正在添加中, 则等待
+		// 带 ctx 超时和 5s 总等待上限, 防止后台 goroutine panic 导致这里永久 spin
+		deadline := time.NewTimer(5 * time.Second)
+		defer deadline.Stop()
+		tick := time.NewTicker(200 * time.Millisecond)
+		defer tick.Stop()
 		for wi.svc.Dictionary.IsWordAdding(ctx, word) {
-			time.Sleep(time.Millisecond * 1000)
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-deadline.C:
+				return nil, fmt.Errorf("等待添加单词超时: %s", word)
+			case <-tick.C:
+			}
 		}
+		// 给后台事务一次提交可见的机会
+		if w, gerr := wi.svc.Dictionary.GetWord(ctx, word); gerr == nil {
+			return w, nil
+		}
+		time.Sleep(100 * time.Millisecond)
 		return wi.svc.Dictionary.GetWord(ctx, word)
 	}
 	if errors.Is(err, dictionary.ErrWordExist) {
@@ -130,13 +147,15 @@ func (wi *WordInfo) IncreaseWord(ctx context.Context, w *types.Word, userId *uin
 	}
 
 	// 自动变为学习状态
-	err = wi.svc.Model.Gen.WordStatus.WithContext(ctx).Create(&bean.WordStatus{
+	if err = wi.svc.Model.Gen.WordStatus.WithContext(ctx).Create(&bean.WordStatus{
 		WordID:   bw.ID,
 		WordType: types.WordTypeWord,
 		Status:   types.WordStatusStudy,
 		UserID:   *userId,
-	})
-
+	}); err != nil {
+		// 必须返回, 否则 word 已插入但 status 未建, 该词永远不会出现在任何练习队列
+		return fmt.Errorf("create word_status failed: %w", err)
+	}
 	return nil
 }
 
@@ -149,9 +168,10 @@ func (wi *WordInfo) GeneratePicture(ctx context.Context, word string, pos int) (
 	if err != nil {
 		return "", fmt.Errorf("generate picture failed, word: %s, pos: %d, err: %w", word, pos, err)
 	}
+	// word 在 key 中需要 sanitize, 防止 ../ 或 / 字符越权写到其他用户目录
 	path, err := wi.svc.Oss.Upload(ctx,
 		types.OssBucket,
-		fmt.Sprintf("picture/user_word_%d/%s/%d_%d.png", wi.userId, word, pos, time.Now().Unix()),
+		fmt.Sprintf("picture/user_word_%d/%s/%d_%d.png", wi.userId, oss.SafeKeyPart(word), pos, time.Now().Unix()),
 		io.NopCloser(bytes.NewReader(p)), int64(len(p)))
 	if err != nil {
 		return "", fmt.Errorf("upload picture failed, word: %s, pos: %d, err: %w", word, pos, err)
