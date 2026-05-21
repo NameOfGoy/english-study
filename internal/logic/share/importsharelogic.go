@@ -283,8 +283,8 @@ func (l *ImportShareLogic) importTags(sourceUserID uint, sourceWordIDs, sourcePh
 	if err := l.svcCtx.Model.DB.WithContext(l.ctx).
 		Where("user_id = ? AND tag IN ?", l.ui.ID, tagNames).
 		Find(&bExistTags).Error; err != nil {
-		// 查不到 B 端已有标签就当 0 处理, 后面会全部新建; 比静默重复创建更安全
-		logx.Errorf("查 B 已有标签失败: %v", err)
+		// 这里若失败, 后续会把 B 已有同名标签当不存在而重复创建. 返回 err 让上层放弃此次导入更安全.
+		return 0, fmt.Errorf("查 B 已有标签失败: %w", err)
 	}
 	bTagByName := map[string]uint{}
 	for _, t := range bExistTags {
@@ -303,7 +303,10 @@ func (l *ImportShareLogic) importTags(sourceUserID uint, sourceWordIDs, sourcePh
 				Style:  t.Style,
 				UserID: l.ui.ID,
 			}
-			if err := l.svcCtx.Model.DB.WithContext(l.ctx).Create(&newTag).Error; err != nil {
+			// ON CONFLICT DO NOTHING: 由 unique 索引 (user_id, tag) 兜底防并发重复
+			if err := l.svcCtx.Model.DB.WithContext(l.ctx).
+				Clauses(clause.OnConflict{DoNothing: true}).
+				Create(&newTag).Error; err != nil {
 				logx.Errorf("创建标签 %s 失败: %v", t.Tag, err)
 				continue
 			}

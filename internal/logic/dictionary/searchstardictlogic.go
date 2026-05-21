@@ -38,10 +38,13 @@ func (l *SearchStardictLogic) SearchStardict(req *types.SearchStardictReq) (*typ
 	if limit <= 0 || limit > 50 {
 		limit = 20
 	}
+	// 转义 LIKE 元字符, 防 % / _ 通配符泄漏导致返回过多无关结果
+	esc := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(keyword)
 
 	sdg := l.svcCtx.Model.Gen.StarDict
+	// 用 ILike 走 pg_trgm GIN 索引 (migration 006), 不全表扫
 	results, err := sdg.WithContext(l.ctx).
-		Where(sdg.Translation.Like("%" + keyword + "%")).
+		Where(sdg.Translation.Like("%" + esc + "%")).
 		Order(sdg.Frq.Desc()).
 		Limit(limit).
 		Find()

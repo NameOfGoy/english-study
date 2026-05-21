@@ -17,6 +17,9 @@ const (
 	defaultModel = bigmodel.ModelCogView3Flash
 )
 
+// 智谱图像生成后会返回一个临时下载 URL，单独走这个客户端拉字节流（30s 超时 + 连接池复用）。
+var imageDownloadClient = &http.Client{Timeout: 30 * time.Second}
+
 // BigModelView 智谱清言图像生成实现
 type BigModelView struct {
 	sdk *bigmodel.SDK
@@ -64,7 +67,7 @@ func (b *BigModelView) Generate(ctx context.Context, description string, opts ..
 	}
 
 	// 处理响应
-	return b.handleResponse(resp, &options)
+	return b.handleResponse(ctx, resp, &options)
 }
 
 // validateOptions 验证选项参数
@@ -121,7 +124,7 @@ func (b *BigModelView) buildRequest(description string, options *view.Option) bi
 }
 
 // handleResponse 处理SDK响应
-func (b *BigModelView) handleResponse(resp *bigmodel.ImageGenerationResponse, options *view.Option) ([]byte, error) {
+func (b *BigModelView) handleResponse(ctx context.Context, resp *bigmodel.ImageGenerationResponse, options *view.Option) ([]byte, error) {
 	if resp == nil || len(resp.Data) == 0 {
 		return nil, fmt.Errorf("no image data in response")
 	}
@@ -137,7 +140,7 @@ func (b *BigModelView) handleResponse(resp *bigmodel.ImageGenerationResponse, op
 		}
 		// 如果是URL，需要下载并转换为Base64
 		if imageData.URL != "" {
-			return b.downloadImageAsBytes(imageData.URL)
+			return b.downloadImageAsBytes(ctx, imageData.URL)
 		}
 		return nil, fmt.Errorf("no base64 or URL data available")
 	case view.ResponseFormatURL:
@@ -148,7 +151,7 @@ func (b *BigModelView) handleResponse(resp *bigmodel.ImageGenerationResponse, op
 	default:
 		// 默认返回URL对应的图像字节数据
 		if imageData.URL != "" {
-			return b.downloadImageAsBytes(imageData.URL)
+			return b.downloadImageAsBytes(ctx, imageData.URL)
 		}
 		// 如果有Base64数据，解码返回
 		if imageData.B64JSON != "" {
@@ -159,8 +162,12 @@ func (b *BigModelView) handleResponse(resp *bigmodel.ImageGenerationResponse, op
 }
 
 // downloadImageAsBytes 下载图像并返回字节数据
-func (b *BigModelView) downloadImageAsBytes(url string) ([]byte, error) {
-	resp, err := http.Get(url)
+func (b *BigModelView) downloadImageAsBytes(ctx context.Context, url string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to build image download request: %w", err)
+	}
+	resp, err := imageDownloadClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to download image: %w", err)
 	}
@@ -170,5 +177,6 @@ func (b *BigModelView) downloadImageAsBytes(url string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to download image: status %d", resp.StatusCode)
 	}
 
-	return io.ReadAll(resp.Body)
+	// AI 生图 PNG 通常 < 3MB, 上限 20MB 防止上游异常或被劫持返回超大数据导致 OOM
+	return io.ReadAll(io.LimitReader(resp.Body, 20<<20))
 }

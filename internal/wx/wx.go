@@ -12,6 +12,9 @@ const (
 	WxHost = "https://api.weixin.qq.com"
 )
 
+// httpClient 复用连接池 + 10 秒超时，避免默认 http.Get 永不超时把 goroutine 挂死。
+var httpClient = &http.Client{Timeout: 10 * time.Second}
+
 type Client struct {
 	appID       string
 	appSecret   string
@@ -32,12 +35,13 @@ func (c *Client) GetAccessToken() error {
 		AccessToken string `json:"access_token"`
 		ExpiresIn   int64  `json:"expires_in"`
 	}{}
-	rsp, err := http.Get(WxHost + path)
+	rsp, err := httpClient.Get(WxHost + path)
 	if err != nil {
 		return err
 	}
 	defer rsp.Body.Close()
-	body, err := io.ReadAll(rsp.Body)
+	// 微信接口响应通常 < 1KB, 设 64KB 上限是充足且偏紧的兜底
+	body, err := io.ReadAll(io.LimitReader(rsp.Body, 64<<10))
 	if err != nil {
 		return err
 	}
@@ -56,12 +60,13 @@ func (c *Client) Code2Session(code string) (openid string, sessionKey string, er
 		OpenID     string `json:"openid"`
 		SessionKey string `json:"session_key"`
 	}{}
-	rsp, err := http.Get(WxHost + path)
+	rsp, err := httpClient.Get(WxHost + path)
 	if err != nil {
 		return "", "", err
 	}
 	defer rsp.Body.Close()
-	body, err := io.ReadAll(rsp.Body)
+	// 微信接口响应通常 < 1KB, 设 64KB 上限是充足且偏紧的兜底
+	body, err := io.ReadAll(io.LimitReader(rsp.Body, 64<<10))
 	if err != nil {
 		return "", "", err
 	}

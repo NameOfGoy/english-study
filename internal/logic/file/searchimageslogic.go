@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"english-study/internal/svc"
 	"english-study/internal/types"
@@ -15,6 +16,9 @@ import (
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
+
+// 必应图片爬取 — 复用连接池 + 8s 超时（之前每次请求都 new http.Client{} 且无超时）
+var bingSearchHTTPClient = &http.Client{Timeout: 8 * time.Second}
 
 type SearchImagesLogic struct {
 	logx.Logger
@@ -90,14 +94,14 @@ func (l *SearchImagesLogic) searchBingImages(query string, offset, count int) ([
 	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
 	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
 
-	client := &http.Client{}
-	httpResp, err := client.Do(req)
+	httpResp, err := bingSearchHTTPClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("请求必应失败: %w", err)
 	}
 	defer httpResp.Body.Close()
 
-	body, err := io.ReadAll(httpResp.Body)
+	// Bing 异步 HTML 4MB 已绰绰有余, 防止上游异常返回 GB 级 padding
+	body, err := io.ReadAll(io.LimitReader(httpResp.Body, 4<<20))
 	if err != nil {
 		return nil, fmt.Errorf("读取响应失败: %w", err)
 	}
