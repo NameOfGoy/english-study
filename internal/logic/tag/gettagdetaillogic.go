@@ -30,17 +30,20 @@ func NewGetTagDetailLogic(ctx context.Context, svcCtx *svc.ServiceContext, ui *u
 func (l *GetTagDetailLogic) GetTagDetail(req *types.GetTagDetailReq) (resp *types.GetTagDetailResp, err error) {
 
 	tg := l.svcCtx.Model.Gen.Tag
-	// 查询标签详情
-	tag, err := tg.WithContext(l.ctx).Where(tg.ID.Eq(req.ID), tg.UserID.Eq(l.ui.ID)).First()
+	// 查询标签详情: 可见性 = 自己的 + 系统的
+	tag, err := tg.WithContext(l.ctx).Where(tg.ID.Eq(req.ID)).
+		Where(tg.WithContext(l.ctx).Where(tg.UserID.Eq(l.ui.ID)).Or(tg.UserID.Eq(0))).
+		First()
 	if err != nil {
 		return nil, errors.ErrorDatabaseQueryError("查询标签详情失败").WithCause(err)
 	}
 
 	return &types.GetTagDetailResp{
 		Data: types.Tag{
-			ID:    tag.ID,
-			Name:  tag.Tag,
-			Style: tag.Style,
+			ID:       tag.ID,
+			Name:     tag.Tag,
+			Style:    tag.Style,
+			IsSystem: tag.UserID == 0,
 		},
 	}, nil
 }

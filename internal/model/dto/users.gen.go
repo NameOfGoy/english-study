@@ -34,6 +34,7 @@ func newUser(db *gorm.DB, opts ...gen.DOOption) user {
 	_user.Phone = field.NewString(tableName, "phone")
 	_user.Email = field.NewString(tableName, "email")
 	_user.Avatar = field.NewString(tableName, "avatar")
+	_user.Role = field.NewInt(tableName, "role")
 	_user.LastLogin = field.NewTime(tableName, "last_login")
 	_user.CreatedAt = field.NewTime(tableName, "created_at")
 	_user.UpdatedAt = field.NewTime(tableName, "updated_at")
@@ -55,6 +56,7 @@ type user struct {
 	Phone     field.String
 	Email     field.String
 	Avatar    field.String
+	Role      field.Int
 	LastLogin field.Time
 	CreatedAt field.Time
 	UpdatedAt field.Time
@@ -82,6 +84,7 @@ func (u *user) updateTableName(table string) *user {
 	u.Phone = field.NewString(table, "phone")
 	u.Email = field.NewString(table, "email")
 	u.Avatar = field.NewString(table, "avatar")
+	u.Role = field.NewInt(table, "role")
 	u.LastLogin = field.NewTime(table, "last_login")
 	u.CreatedAt = field.NewTime(table, "created_at")
 	u.UpdatedAt = field.NewTime(table, "updated_at")
@@ -101,7 +104,7 @@ func (u *user) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (u *user) fillFieldMap() {
-	u.fieldMap = make(map[string]field.Expr, 11)
+	u.fieldMap = make(map[string]field.Expr, 12)
 	u.fieldMap["id"] = u.ID
 	u.fieldMap["account"] = u.Account
 	u.fieldMap["wx_open_id"] = u.WxOpenID
@@ -110,6 +113,7 @@ func (u *user) fillFieldMap() {
 	u.fieldMap["phone"] = u.Phone
 	u.fieldMap["email"] = u.Email
 	u.fieldMap["avatar"] = u.Avatar
+	u.fieldMap["role"] = u.Role
 	u.fieldMap["last_login"] = u.LastLogin
 	u.fieldMap["created_at"] = u.CreatedAt
 	u.fieldMap["updated_at"] = u.UpdatedAt

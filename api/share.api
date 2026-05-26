@@ -75,8 +75,8 @@ type GetShareWordDetailResp {
 }
 
 type ImportShareReq {
-	Token      string `json:"token"`
-	ImportTags bool   `json:"import_tags,optional"` // 是否同步导入标签
+	Token         string `json:"token"`
+	TagImportMode int    `json:"tag_import_mode,optional"` // 0-不带 1-仅系统 2-全部 (默认 0)
 }
 
 type ImportShareResp {

@@ -19,10 +19,7 @@ func DownloadHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			return
 		}
 		
-		//l := file.NewDownloadLogic(r.Context(), svcCtx, ui)
-		//resp, err := l.Download(&req)
-		w.WriteHeader(http.StatusMovedPermanently) // 直接301转发
-		w.Header().Set("Location", fmt.Sprintf("/api/v1/file/%s", req.Path))
-		httpx.OkJsonCtx(r.Context(), w, utils.WrapResponse(&types.FileDownloadResp{}, nil))
+		// 直接 301 转发到文件服务（http.Redirect 会按顺序正确写 Location header + status code）
+		http.Redirect(w, r, fmt.Sprintf("/api/v1/file/%s", req.Path), http.StatusMovedPermanently)
 	}
 }

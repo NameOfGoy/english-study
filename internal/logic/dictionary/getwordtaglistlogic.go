@@ -2,7 +2,6 @@ package dictionary
 
 import (
 	"context"
-	"english-study/internal/model/bean"
 	"english-study/internal/utils"
 
 	"english-study/internal/svc"
@@ -45,13 +44,15 @@ func (l *GetWordTagListLogic) GetWordTagList(req *types.GetWordTagListReq) (resp
 
 	// 暂不做分页
 
-	// 查询
+	// 用扁平结构接 JOIN 结果, 避免 GORM Scan 到嵌入指针时不自动分配导致字段全 0
 	type Result struct {
-		*bean.WordTag
-		Name  string `gorm:"column:tag"`
-		Style string `gorm:"column:style"`
+		ID       uint   `gorm:"column:id"`
+		WordID   uint   `gorm:"column:word_id"`
+		WordType int    `gorm:"column:word_type"`
+		TagID    uint   `gorm:"column:tag_id"`
+		Name     string `gorm:"column:tag"`
+		Style    string `gorm:"column:style"`
 	}
-	// 查询单词标签
 	var wts []Result
 	err = find.Select(
 		wtg.ID,
@@ -68,7 +69,6 @@ func (l *GetWordTagListLogic) GetWordTagList(req *types.GetWordTagListReq) (resp
 		return nil, err
 	}
 
-	// 转换为响应格式
 	for _, w := range wts {
 		resp.Data = append(resp.Data, &types.WordTag{
 			ID:       w.ID,

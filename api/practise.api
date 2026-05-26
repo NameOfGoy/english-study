@@ -23,9 +23,10 @@ type TranslationItem {
 }
 
 type GetWordCardListReq {
-	Count  int  `form:"count,default=10"` // 单词数量
-	Random bool `form:"random"` // 是否随机
-	WordType int `form:"word_type, optional"` // 单词类型 0-都行 1-单词 2-短语
+	Count    int    `form:"count,default=10"` // 单词数量
+	Random   bool   `form:"random"` // 是否随机
+	WordType int    `form:"word_type,optional"` // 单词类型 0-都行 1-单词 2-短语
+	TagIDs   []uint `form:"tag_ids,optional"` // 全局标签筛选: 只取打了任一标签的词; 空=不筛选
 }
 
 type GetWordCardListResp {

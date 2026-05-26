@@ -107,7 +107,7 @@ func TestValidateAPIKey(t *testing.T) {
 // TestChatCompletionRequest 测试对话请求结构
 func TestChatCompletionRequest(t *testing.T) {
 	req := ChatCompletionRequest{
-		Model: ModelGLM4,
+		Model: ModelGLM45Flash,
 		Messages: []Message{
 			{
 				Role:    "user",
@@ -118,8 +118,8 @@ func TestChatCompletionRequest(t *testing.T) {
 		MaxTokens:   intPtr(1000),
 	}
 
-	if req.Model != ModelGLM4 {
-		t.Errorf("Expected model %s, got %s", ModelGLM4, req.Model)
+	if req.Model != ModelGLM45Flash {
+		t.Errorf("Expected model %s, got %s", ModelGLM45Flash, req.Model)
 	}
 
 	if len(req.Messages) != 1 {
@@ -265,11 +265,11 @@ func TestHelperFunctions(t *testing.T) {
 func TestConstants(t *testing.T) {
 	// 测试模型常量
 	models := []string{
-		ModelGLM4,
-		ModelGLM4V,
-		ModelGLM3Turbo,
-		ModelGLM4Flash,
-		ModelCogView3,
+		ModelGLM45Flash,
+		ModelGLM41VThinkingFlash,
+		ModelGLMZ1Flash,
+		ModelGLM4Flash250414,
+		ModelCogView3Flash,
 	}
 
 	for _, model := range models {

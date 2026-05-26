@@ -39,13 +39,25 @@ func (l *AddTagLogic) AddTag(req *types.AddTagReq) (*types.AddTagResp, error) {
 		return nil, errors.ErrorRequestParamError("标签名称不能超过20字")
 	}
 
+	// 系统标签需要超管权限; 鉴权依据是 JWT 解出来的 role, 不读请求体的其它字段
+	ownerID := l.ui.ID
+	if req.IsSystem {
+		if err := utils.RequireAdmin(l.ui); err != nil {
+			return nil, errors.ErrorPermissionError("仅超管可创建系统标签")
+		}
+		ownerID = 0
+	}
+
 	tg := l.svcCtx.Model.Gen.Tag
 
-	// 重名检查：在自己的标签和默认标签里
-	cnt, err := tg.WithContext(l.ctx).
-		Where(tg.Tag.Eq(name)).
-		Where(tg.WithContext(l.ctx).Where(tg.UserID.Eq(l.ui.ID)).Or(tg.UserID.Eq(0))).
-		Count()
+	// 重名检查: 同名查 (owner + 系统标签); 系统标签 owner=0 时, "系统标签" 那部分等价于自身, 不必再 union
+	q := tg.WithContext(l.ctx).Where(tg.Tag.Eq(name))
+	if ownerID == 0 {
+		q = q.Where(tg.UserID.Eq(0))
+	} else {
+		q = q.Where(tg.WithContext(l.ctx).Where(tg.UserID.Eq(ownerID)).Or(tg.UserID.Eq(0)))
+	}
+	cnt, err := q.Count()
 	if err != nil {
 		return nil, errors.ErrorDatabaseQueryError("查询标签重名失败").WithCause(err)
 	}
@@ -56,7 +68,7 @@ func (l *AddTagLogic) AddTag(req *types.AddTagReq) (*types.AddTagResp, error) {
 	if err := tg.WithContext(l.ctx).Create(&bean.Tag{
 		Tag:    name,
 		Style:  req.Style,
-		UserID: l.ui.ID,
+		UserID: ownerID,
 	}); err != nil {
 		return nil, errors.ErrorDatabaseInsertError("创建标签失败").WithCause(err)
 	}

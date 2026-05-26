@@ -1,6 +1,7 @@
 package model
 
 import (
+	"english-study/internal/eventbus"
 	"english-study/internal/model/bean"
 	"english-study/internal/model/dto"
 
@@ -25,6 +26,14 @@ func NewModel(dsn string) (*Model, error) {
 	}
 	// 每个用户一份自己的词典表
 	if err := userWordTableSync(db); err != nil {
+		return nil, err
+	}
+	// 启动时孤儿清理: 上次进程如果在 PublishAsync(tag.deleted) 后崩了, 这里兜底清掉 word_tags 残留
+	if err := eventbus.ReapOrphanWordTags(db); err != nil {
+		return nil, err
+	}
+	// 注册 eventbus 订阅者 (tag 删除级联清理等)
+	if err := eventbus.RegisterSubscribers(db); err != nil {
 		return nil, err
 	}
 	return &Model{

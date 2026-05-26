@@ -30,11 +30,20 @@ func NewRegisterWxLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Regist
 }
 
 func (l *RegisterWxLogic) RegisterWx(req *types.UserRegisterWxReq) (resp *types.UserRegisterWxResp, err error) {
-	if req.OpenId == "" {
-		return nil, errors.ErrorRequestParamError("openid不能为空")
+	if req.Code == "" {
+		return nil, errors.ErrorRequestParamError("code不能为空")
 	}
-	// 1. 检查用户是否存在
-	_, err = l.svcCtx.Model.Gen.User.Where(l.svcCtx.Model.Gen.User.WxOpenID.Eq(req.OpenId)).WithContext(l.ctx).First()
+	// 1. 用 code 向微信换取真实的 openid（防止客户端伪造 openid）
+	openid, _, err := l.svcCtx.Wx.Code2Session(req.Code)
+	if err != nil {
+		return nil, errors.ErrorWxAuthError("微信换取openid失败").WithCause(err)
+	}
+	if openid == "" {
+		return nil, errors.ErrorWxAuthError("微信返回空 openid")
+	}
+
+	// 2. 检查用户是否存在
+	_, err = l.svcCtx.Model.Gen.User.Where(l.svcCtx.Model.Gen.User.WxOpenID.Eq(openid)).WithContext(l.ctx).First()
 	if err == nil {
 		return nil, errors.ErrorAccountExistError("用户已存在")
 	}
@@ -42,9 +51,9 @@ func (l *RegisterWxLogic) RegisterWx(req *types.UserRegisterWxReq) (resp *types.
 		return nil, errors.ErrorDatabaseQueryError("查询失败").WithCause(err)
 	}
 
-	// 2. 创建用户
+	// 3. 创建用户
 	user := &bean.User{
-		WxOpenID: req.OpenId,
+		WxOpenID: openid,
 		Username: req.Name,
 		Avatar:   req.Avatar,
 	}

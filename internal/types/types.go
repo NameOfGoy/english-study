@@ -4,8 +4,9 @@
 package types
 
 type AddTagReq struct {
-	Name  string `json:"name"`  // 标签名称
-	Style string `json:"style"` // 标签样式
+	Name     string `json:"name"`
+	Style    string `json:"style"`
+	IsSystem bool   `json:"is_system,optional"` // true=系统标签, 仅超管可设
 }
 
 type AddTagResp struct {
@@ -14,11 +15,11 @@ type AddTagResp struct {
 
 type AddWordPhraseReq struct {
 	Phrase            string     `json:"phrase"`                        // 短语
-	Translation       string     `json:"translation, optional"`         // 中文翻译
-	Pronunciation     string     `json:"pronunciation, optional"`       // 发音
-	Example           []*Example `json:"example, optional"`             // 例句
-	Picture           string     `json:"picture, optional"`             // 图片
-	IsGeneratePicture bool       `json:"is_generate_picture, optional"` // 是否生成图片
+	Translation       string     `json:"translation,optional"`         // 中文翻译
+	Pronunciation     string     `json:"pronunciation,optional"`       // 发音
+	Example           []*Example `json:"example,optional"`             // 例句
+	Picture           string     `json:"picture,optional"`             // 图片
+	IsGeneratePicture bool       `json:"is_generate_picture,optional"` // 是否生成图片
 }
 
 type AddWordPhraseResp struct {
@@ -27,12 +28,12 @@ type AddWordPhraseResp struct {
 
 type AddWordReq struct {
 	Word              string     `json:"word"`                          // 单词
-	UKPhonetic        string     `json:"uk_phonetic, optional"`         // 英式音标
-	UKAudio           string     `json:"uk_audio, optional"`            // 英式音频
-	USPhonetic        string     `json:"us_phonetic, optional"`         // 美式音标
-	USAudio           string     `json:"us_audio, optional"`            // 美式音频
-	Pos               []*WordPos `json:"pos, optional"`                 // 词性
-	IsGeneratePicture bool       `json:"is_generate_picture, optional"` // 是否生成图片
+	UKPhonetic        string     `json:"uk_phonetic,optional"`         // 英式音标
+	UKAudio           string     `json:"uk_audio,optional"`            // 英式音频
+	USPhonetic        string     `json:"us_phonetic,optional"`         // 美式音标
+	USAudio           string     `json:"us_audio,optional"`            // 美式音频
+	Pos               []*WordPos `json:"pos,optional"`                 // 词性
+	IsGeneratePicture bool       `json:"is_generate_picture,optional"` // 是否生成图片
 }
 
 type AddWordResp struct {
@@ -196,7 +197,7 @@ type GenerateExampleResp struct {
 
 type GeneratePhraseExampleReq struct {
 	ID          uint   `json:"id"`                    // 短语ID
-	Translation string `json:"translation, optional"` // 指定某中文翻译
+	Translation string `json:"translation,optional"` // 指定某中文翻译
 }
 
 type GeneratePhraseExampleResp struct {
@@ -298,9 +299,10 @@ type GetUserInfoResp struct {
 }
 
 type GetWordCardListReq struct {
-	Count    int  `form:"count,default=10"`    // 单词数量
-	Random   bool `form:"random"`              // 是否随机
-	WordType int  `form:"word_type, optional"` // 单词类型 0-都行 1-单词 2-短语
+	Count    int    `form:"count,default=10"`    // 单词数量
+	Random   bool   `form:"random"`              // 是否随机
+	WordType int    `form:"word_type,optional"`  // 单词类型 0-都行 1-单词 2-短语
+	TagIDs   []uint `form:"tag_ids,optional"`    // 全局标签筛选: 只取打了任一标签的词; 空=不筛选
 }
 
 type GetWordCardListResp struct {
@@ -319,10 +321,10 @@ type GetWordDetailResp struct {
 
 type GetWordListReq struct {
 	PageReq
-	WordPrefix  string `form:"word_prefix, optional"` // 单词前缀
-	Pos         int    `form:"pos, optional"`         // 词性
-	Translation string `form:"translation, optional"` // 中文翻译
-	Phonetic    string `form:"phonetic, optional"`    // 音标
+	WordPrefix  string `form:"word_prefix,optional"` // 单词前缀
+	Pos         int    `form:"pos,optional"`         // 词性
+	Translation string `form:"translation,optional"` // 中文翻译
+	Phonetic    string `form:"phonetic,optional"`    // 音标
 }
 
 type GetWordListResp struct {
@@ -342,9 +344,9 @@ type GetWordPhraseDetailResp struct {
 
 type GetWordPhraseListReq struct {
 	PageReq
-	WordID       []uint `form:"word_id, optional"`       // 单词ID列表
-	PhrasePrefix string `form:"phrase_prefix, optional"` // 短语前缀
-	Translation  string `form:"translation, optional"`   // 中文翻译
+	WordID       []uint `form:"word_id,optional"`       // 单词ID列表
+	PhrasePrefix string `form:"phrase_prefix,optional"` // 短语前缀
+	Translation  string `form:"translation,optional"`   // 中文翻译
 }
 
 type GetWordPhraseListResp struct {
@@ -355,8 +357,8 @@ type GetWordPhraseListResp struct {
 
 type GetWordStatusListReq struct {
 	PageReq
-	WordID   []uint `form:"word_id, optional"`   // 单词ID列表
-	WordType int    `form:"word_type, optional"` // 单词类型, 1-单词 2-短语
+	WordID   []uint `form:"word_id,optional"`   // 单词ID列表
+	WordType int    `form:"word_type,optional"` // 单词类型, 1-单词 2-短语
 }
 
 type GetWordStatusListResp struct {
@@ -367,8 +369,8 @@ type GetWordStatusListResp struct {
 
 type GetWordTagListReq struct {
 	PageReq
-	WordID   []uint `form:"word_id, optional"`   // 单词ID列表
-	WordType int    `form:"word_type, optional"` // 单词类型, 1-单词 2-短语
+	WordID   []uint `form:"word_id,optional"`   // 单词ID列表
+	WordType int    `form:"word_type,optional"` // 单词类型, 1-单词 2-短语
 }
 
 type GetWordTagListResp struct {
@@ -385,8 +387,8 @@ type ImageResult struct {
 }
 
 type ImportShareReq struct {
-	Token      string `json:"token"`
-	ImportTags bool   `json:"import_tags,optional"` // 是否同步导入标签
+	Token         string `json:"token"`
+	TagImportMode int    `json:"tag_import_mode,optional"` // 0-不带 1-仅系统 2-全部 (默认 0)
 }
 
 type ImportShareResp struct {
@@ -500,9 +502,10 @@ type StardictItem struct {
 }
 
 type Tag struct {
-	ID    uint   `json:"id"`    // 标签ID
-	Name  string `json:"name"`  // 标签名称
-	Style string `json:"style"` // 标签样式
+	ID       uint   `json:"id"`
+	Name     string `json:"name"`
+	Style    string `json:"style"`
+	IsSystem bool   `json:"is_system"` // 是否系统标签 (user_id=0)
 }
 
 type TranslationItem struct {
@@ -634,6 +637,7 @@ type UserInfo struct {
 	Phone   string `json:"phone"`
 	Email   string `json:"email"`
 	Avatar  string `json:"avatar"` // 头像
+	Role    int    `json:"role"`   // 角色 0-普通 1-超管 (前端 UI 显隐用, 鉴权仍在服务端 JWT)
 }
 
 type UserLoginReq struct {
@@ -671,9 +675,9 @@ type UserRegisterResp struct {
 }
 
 type UserRegisterWxReq struct {
-	OpenId string `json:"open_id"` // 微信openid
-	Name   string `json:"name"`    // 用户名
-	Avatar string `json:"avatar"`  // 头像
+	Code   string `json:"code"`   // 微信登录code，服务端会用它去 Code2Session 拿真实 openid（禁止客户端直接传 openid）
+	Name   string `json:"name"`   // 用户名
+	Avatar string `json:"avatar"` // 头像
 }
 
 type UserRegisterWxResp struct {
@@ -717,14 +721,14 @@ type WordPhrase struct {
 }
 
 type WordPos struct {
-	ID          uint              `json:"id, optional"`          // 自定义的词性, id 从100W开始
+	ID          uint              `json:"id,optional"`          // 自定义的词性, id 从100W开始
 	WordID      uint              `json:"word_id"`               // 单词ID
-	Word        string            `json:"word, optional"`        // 单词
-	Pos         int               `json:"pos, optional"`         // 词性
-	Translation string            `json:"translation, optional"` // 中文翻译
-	Example     []*Example        `json:"example, optional"`     // 例句, 一个元素是一个句子, 通过\n分割例句和中文翻译
-	Picture     string            `json:"picture, optional"`     // 图片
-	Exchange    map[string]string `json:"exchange, optional"`    // 变化形式, key是变化形式简写, value是变化形式的单词, 例如单词do, p:did, d:done, i:doing, 3:does
+	Word        string            `json:"word,optional"`        // 单词
+	Pos         int               `json:"pos,optional"`         // 词性
+	Translation string            `json:"translation,optional"` // 中文翻译
+	Example     []*Example        `json:"example,optional"`     // 例句, 一个元素是一个句子, 通过\n分割例句和中文翻译
+	Picture     string            `json:"picture,optional"`     // 图片
+	Exchange    map[string]string `json:"exchange,optional"`    // 变化形式, key是变化形式简写, value是变化形式的单词, 例如单词do, p:did, d:done, i:doing, 3:does
 }
 
 type WordStatus struct {

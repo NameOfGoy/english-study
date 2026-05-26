@@ -75,13 +75,13 @@ type Word {
 }
 
 type WordPos {
-	ID          uint       `json:"id, optional"` // 自定义的词性, id 从100W开始
+	ID          uint       `json:"id,optional"` // 自定义的词性, id 从100W开始
 	WordID      uint       `json:"word_id"` // 单词ID
-	Word        string     `json:"word, optional"` // 单词
-	Pos         int        `json:"pos, optional"` // 词性
-	Translation string     `json:"translation, optional"` // 中文翻译
-	Example     []*Example `json:"example, optional"` // 例句, 一个元素是一个句子, 通过\n分割例句和中文翻译
-	Picture     string     `json:"picture, optional"` // 图片
+	Word        string     `json:"word,optional"` // 单词
+	Pos         int        `json:"pos,optional"` // 词性
+	Translation string     `json:"translation,optional"` // 中文翻译
+	Example     []*Example `json:"example,optional"` // 例句, 一个元素是一个句子, 通过\n分割例句和中文翻译
+	Picture     string     `json:"picture,optional"` // 图片
 	// Exchange 变化形式
 	// p     过去式（did）
 	// d     过去分词（done）
@@ -90,7 +90,7 @@ type WordPos {
 	// r     形容词比较级（-er）
 	// t     形容词最高级（-est）
 	// s     名词复数形式
-	Exchange map[string]string `json:"exchange, optional"` // 变化形式, key是变化形式简写, value是变化形式的单词, 例如单词do, p:did, d:done, i:doing, 3:does
+	Exchange map[string]string `json:"exchange,optional"` // 变化形式, key是变化形式简写, value是变化形式的单词, 例如单词do, p:did, d:done, i:doing, 3:does
 }
 
 type Example {
@@ -100,10 +100,10 @@ type Example {
 
 type GetWordListReq {
 	PageReq
-	WordPrefix  string `form:"word_prefix, optional"` // 单词前缀
-	Pos         int    `form:"pos, optional"` // 词性
-	Translation string `form:"translation, optional"` // 中文翻译
-	Phonetic    string `form:"phonetic, optional"` // 音标
+	WordPrefix  string `form:"word_prefix,optional"` // 单词前缀
+	Pos         int    `form:"pos,optional"` // 词性
+	Translation string `form:"translation,optional"` // 中文翻译
+	Phonetic    string `form:"phonetic,optional"` // 音标
 }
 
 type SimpleWord {
@@ -128,12 +128,12 @@ type GetWordDetailResp {
 
 type AddWordReq {
 	Word              string     `json:"word"` // 单词
-	UKPhonetic        string     `json:"uk_phonetic, optional"` // 英式音标
-	UKAudio           string     `json:"uk_audio, optional"` // 英式音频
-	USPhonetic        string     `json:"us_phonetic, optional"` // 美式音标
-	USAudio           string     `json:"us_audio, optional"` // 美式音频
-	Pos               []*WordPos `json:"pos, optional"` // 词性
-	IsGeneratePicture bool       `json:"is_generate_picture, optional"` // 是否生成图片
+	UKPhonetic        string     `json:"uk_phonetic,optional"` // 英式音标
+	UKAudio           string     `json:"uk_audio,optional"` // 英式音频
+	USPhonetic        string     `json:"us_phonetic,optional"` // 美式音标
+	USAudio           string     `json:"us_audio,optional"` // 美式音频
+	Pos               []*WordPos `json:"pos,optional"` // 词性
+	IsGeneratePicture bool       `json:"is_generate_picture,optional"` // 是否生成图片
 }
 
 type AddWordResp {
@@ -265,11 +265,11 @@ type WordPhrase {
 
 type AddWordPhraseReq {
 	Phrase            string     `json:"phrase"` // 短语
-	Translation       string     `json:"translation, optional"` // 中文翻译
-	Pronunciation     string     `json:"pronunciation, optional"` // 发音
-	Example           []*Example `json:"example, optional"` // 例句
-	Picture           string     `json:"picture, optional"` // 图片
-	IsGeneratePicture bool       `json:"is_generate_picture, optional"` // 是否生成图片
+	Translation       string     `json:"translation,optional"` // 中文翻译
+	Pronunciation     string     `json:"pronunciation,optional"` // 发音
+	Example           []*Example `json:"example,optional"` // 例句
+	Picture           string     `json:"picture,optional"` // 图片
+	IsGeneratePicture bool       `json:"is_generate_picture,optional"` // 是否生成图片
 }
 
 type AddWordPhraseResp {
@@ -287,9 +287,9 @@ type GetWordPhraseDetailResp {
 
 type GetWordPhraseListReq {
 	PageReq
-	WordID       []uint `form:"word_id, optional"` // 单词ID列表
-	PhrasePrefix string `form:"phrase_prefix, optional"` // 短语前缀
-	Translation  string `form:"translation, optional"` // 中文翻译
+	WordID       []uint `form:"word_id,optional"` // 单词ID列表
+	PhrasePrefix string `form:"phrase_prefix,optional"` // 短语前缀
+	Translation  string `form:"translation,optional"` // 中文翻译
 }
 
 type GetWordPhraseListResp {
@@ -356,7 +356,7 @@ type UpdatePhraseExampleResp {
 
 type GeneratePhraseExampleReq {
 	ID          uint   `json:"id"` // 短语ID
-	Translation string `json:"translation, optional"` // 指定某中文翻译
+	Translation string `json:"translation,optional"` // 指定某中文翻译
 }
 
 type GeneratePhraseExampleResp {
@@ -390,8 +390,8 @@ type WordStatus {
 
 type GetWordStatusListReq {
 	PageReq
-	WordID   []uint `form:"word_id, optional"` // 单词ID列表
-	WordType int    `form:"word_type, optional"` // 单词类型, 1-单词 2-短语
+	WordID   []uint `form:"word_id,optional"` // 单词ID列表
+	WordType int    `form:"word_type,optional"` // 单词类型, 1-单词 2-短语
 }
 
 type GetWordStatusListResp {
@@ -436,8 +436,8 @@ type WordTag {
 
 type GetWordTagListReq {
 	PageReq
-	WordID   []uint `form:"word_id, optional"` // 单词ID列表
-	WordType int    `form:"word_type, optional"` // 单词类型, 1-单词 2-短语
+	WordID   []uint `form:"word_id,optional"` // 单词ID列表
+	WordType int    `form:"word_type,optional"` // 单词类型, 1-单词 2-短语
 }
 
 type GetWordTagListResp {

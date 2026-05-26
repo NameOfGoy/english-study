@@ -82,22 +82,44 @@ func genSaltUnused() ([]byte, error) {
 	return salt, err
 }
 
-// 生成token
-func GenerateToken(secretKey string, iat, seconds int64, userID uint, username string) (string, error) {
-	// 生成token
+// 生成token; role 进 claims 并被 HMAC 签名保护, 服务端鉴权一律读这里, 不读响应 body / 请求参数
+func GenerateToken(secretKey string, iat, seconds int64, userID uint, username string, role int) (string, error) {
 	claims := make(jwt.MapClaims)
 	claims["exp"] = iat + seconds
 	claims["iat"] = iat
 	claims["user_id"] = userID
 	claims["username"] = username
+	claims["role"] = role
 	token := jwt.New(jwt.SigningMethodHS256)
 	token.Claims = claims
 	return token.SignedString([]byte(secretKey))
 }
 
+// 角色常量 (重复于 bean.User 是为了避免循环依赖)
+const (
+	RoleNormal = 0
+	RoleAdmin  = 1
+)
+
 type UserInfo struct {
 	ID       uint   `json:"id"`
 	Username string `json:"username"`
+	Role     int    `json:"role"`
+}
+
+// IsAdmin 是否超管
+func (u *UserInfo) IsAdmin() bool {
+	return u != nil && u.Role == RoleAdmin
+}
+
+// 鉴权 helper: 不是超管返回 error, 上层直接 return
+var ErrPermissionDenied = fmt.Errorf("permission denied: admin required")
+
+func RequireAdmin(ui *UserInfo) error {
+	if !ui.IsAdmin() {
+		return ErrPermissionDenied
+	}
+	return nil
 }
 
 func GetUserInfoFromCtx(ctx context.Context) (user *UserInfo, err error) {
@@ -113,8 +135,18 @@ func GetUserInfoFromCtx(ctx context.Context) (user *UserInfo, err error) {
 	if !ok {
 		return nil, fmt.Errorf("get username from ctx failed")
 	}
+	// role 可能缺失 (老 JWT 未含此 claim), 默认普通
+	role := 0
+	if v := ctx.Value("role"); v != nil {
+		if n, ok2 := v.(json.Number); ok2 {
+			if r, e := n.Int64(); e == nil {
+				role = int(r)
+			}
+		}
+	}
 	return &UserInfo{
 		ID:       uint(userId),
 		Username: username,
+		Role:     role,
 	}, nil
 }

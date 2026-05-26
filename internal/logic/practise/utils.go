@@ -88,6 +88,57 @@ func beanPhraseToWordCard(w *bean.WordPhrase) *types.WordCard {
 	}
 }
 
+// applyTagFilter 在 word_statuses 查询链上把"必须打了任一指定标签"作为过滤条件.
+// 实现: 先单独查 word_tags 拿匹配的 (word_id, word_type) 对应的 word_statuses.id, 再用 In 限制主查询.
+// tagIDs 为空时不动 (不筛选). 索引: word_tags(user_id, tag_id, word_type, word_id) 见迁移 009.
+//
+// 不直接拼 EXISTS 子查询, 是因为 GORM Gen 的 typed chain 不便直接挂 raw SQL; 这里两段查询
+// 在单用户量级 (一般 < 10k 词条) 下成本可忽略.
+func applyTagFilter(ctx context.Context, m *model.Model, find dto.IWordStatusDo, userID uint, tagIDs []uint) (dto.IWordStatusDo, error) {
+	if len(tagIDs) == 0 {
+		return find, nil
+	}
+	// 1. 拿到当前用户 + 指定标签下涉及的 (word_id, word_type) 集合
+	type wtKey struct {
+		WordID   uint
+		WordType int
+	}
+	var rows []wtKey
+	if err := m.DB.WithContext(ctx).
+		Table("word_tags").
+		Where("user_id = ? AND tag_id IN ?", userID, tagIDs).
+		Select("DISTINCT word_id, word_type").
+		Find(&rows).Error; err != nil {
+		return find, err
+	}
+	if len(rows) == 0 {
+		// 没有任何匹配, 返回一个永远空的查询
+		wsg := m.Gen.WordStatus
+		return find.Where(wsg.ID.Eq(0)), nil
+	}
+
+	// 2. 反查 word_statuses 拿匹配的 id 列表
+	wordIDs := make([]uint, 0, len(rows))
+	wordTypes := make([]int, 0, len(rows))
+	for _, r := range rows {
+		wordIDs = append(wordIDs, r.WordID)
+		wordTypes = append(wordTypes, r.WordType)
+	}
+	var ids []uint
+	if err := m.DB.WithContext(ctx).
+		Table("word_statuses").
+		Where("user_id = ? AND word_id IN ? AND word_type IN ?", userID, wordIDs, wordTypes).
+		Pluck("id", &ids).Error; err != nil {
+		return find, err
+	}
+	if len(ids) == 0 {
+		wsg := m.Gen.WordStatus
+		return find.Where(wsg.ID.Eq(0)), nil
+	}
+	wsg := m.Gen.WordStatus
+	return find.Where(wsg.ID.In(ids...)), nil
+}
+
 func getRandomWordStatus(find dto.IWordStatusDo, count int) (wss []*bean.WordStatus, err error) {
 
 	// 随机, 取 req.Count * 3 条数据, 随机偏移量; 再从这些数据中随机取 req.Count 条

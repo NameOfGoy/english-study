@@ -4,12 +4,10 @@ import (
 	"context"
 	"english-study/internal/errors"
 	"english-study/internal/model/bean"
-	"english-study/internal/utils"
-	"fmt"
-	"strings"
-
 	"english-study/internal/svc"
 	"english-study/internal/types"
+	"english-study/internal/utils"
+	"strings"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -58,14 +56,23 @@ func (l *GetWordPhraseListLogic) GetWordPhraseList(req *types.GetWordPhraseListR
 		find = find.Limit(req.Limit)
 	}
 	if req.OrderBy != "" {
-		if _, ok := l.svcCtx.Model.Gen.Word.GetFieldByName(req.OrderBy); !ok {
-			return nil, errors.ErrorRequestParamError("排序字段不存在")
+		// 严格白名单（且按 WordPhrase 实际列名，不再借用 Gen.Word 的字段表）
+		allowedOrderBy := map[string]string{
+			"phrase":      "phrase",
+			"translation": "translation",
+			"created_at":  "created_at",
+			"updated_at":  "updated_at",
+			"id":          "id",
 		}
-		sort := "asc"
+		col, ok := allowedOrderBy[req.OrderBy]
+		if !ok {
+			return nil, errors.ErrorRequestParamError("排序字段不允许")
+		}
+		direction := "asc"
 		if req.Sort == "desc" {
-			sort = req.Sort
+			direction = "desc"
 		}
-		find = find.Order(fmt.Sprintf("%s %s", req.OrderBy, sort))
+		find = find.Order(col + " " + direction)
 	}
 
 	var list []*bean.WordPhrase

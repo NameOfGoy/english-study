@@ -141,6 +141,8 @@ func (wi *WordInfo) IncreaseWord(ctx context.Context, w *types.Word, userId *uin
 	if err != nil {
 		return err
 	}
+	// 把新分配的 user 表 ID 回写到调用方 w, 给后续(贴标签)使用
+	w.ID = bw.ID
 
 	if userId == nil {
 		return nil
