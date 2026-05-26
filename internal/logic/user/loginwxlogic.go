@@ -52,7 +52,7 @@ func (l *LoginWxLogic) LoginWx(req *types.UserLoginWxReq) (resp *types.UserLogin
 	}
 
 	// 生成token
-	token, err := utils.GenerateToken(l.svcCtx.Config.Auth.AccessSecret, time.Now().Unix(), l.svcCtx.Config.Auth.AccessExpire, user.ID, user.Username)
+	token, err := utils.GenerateToken(l.svcCtx.Config.Auth.AccessSecret, time.Now().Unix(), l.svcCtx.Config.Auth.AccessExpire, user.ID, user.Username, user.Role)
 	if err != nil {
 		return nil, errors.ErrorTokenGenerateError("生成token失败").WithCause(err)
 	}
@@ -67,6 +67,7 @@ func (l *LoginWxLogic) LoginWx(req *types.UserLoginWxReq) (resp *types.UserLogin
 			Phone:   user.Phone,
 			Email:   user.Email,
 			Avatar:  user.Avatar,
+			Role:    user.Role,
 		},
 	}, nil
 }

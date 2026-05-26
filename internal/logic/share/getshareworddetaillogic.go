@@ -28,15 +28,32 @@ func NewGetShareWordDetailLogic(ctx context.Context, svcCtx *svc.ServiceContext,
 }
 
 func (l *GetShareWordDetailLogic) GetShareWordDetail(req *types.GetShareWordDetailReq) (*types.GetShareWordDetailResp, error) {
-	payload, err := DecodeToken(req.Token, l.svcCtx.Config.Auth.AccessSecret)
+	payload, err := DecodeToken(req.Token, DeriveShareSecret(l.svcCtx.Config.Auth.AccessSecret))
 	if err != nil {
 		return nil, errors.ErrorRequestParamError("分享码无效或已过期").WithCause(err)
 	}
 	sourceUserID := uint(payload.UserID)
 
+	// 校验 req.WordID 必须在 token 授权的范围内（防止持有任意一个分享 token 就能枚举对方所有单词）
+	allowedWordIDs, allowedPhraseIDs, err := collectShareItemIDs(l.ctx, l.svcCtx, sourceUserID, payload)
+	if err != nil {
+		return nil, err
+	}
+	inSet := func(ids []uint, target uint) bool {
+		for _, id := range ids {
+			if id == target {
+				return true
+			}
+		}
+		return false
+	}
+
 	resp := &types.GetShareWordDetailResp{}
 
 	if req.WordType == 1 {
+		if !inSet(allowedWordIDs, req.WordID) {
+			return nil, errors.ErrorRequestParamError("该单词不在分享范围内")
+		}
 		// 单词详情：复用 A 端的 word_user_{A} + word_pos_user_{A}
 		word, err := l.svcCtx.Model.GetWordWithPosById(l.ctx, req.WordID, &sourceUserID)
 		if err != nil {
@@ -66,6 +83,9 @@ func (l *GetShareWordDetailLogic) GetShareWordDetail(req *types.GetShareWordDeta
 		}
 		resp.Word = w
 	} else if req.WordType == 2 {
+		if !inSet(allowedPhraseIDs, req.WordID) {
+			return nil, errors.ErrorRequestParamError("该短语不在分享范围内")
+		}
 		// 短语详情：复用 A 端的 word_phrase_user_{A}
 		ph, err := l.svcCtx.Model.GetWordPhraseById(l.ctx, req.WordID, &sourceUserID)
 		if err != nil {

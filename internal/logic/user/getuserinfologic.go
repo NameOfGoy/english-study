@@ -30,10 +30,9 @@ func NewGetUserInfoLogic(ctx context.Context, svcCtx *svc.ServiceContext, ui *ut
 
 func (l *GetUserInfoLogic) GetUserInfo(req *types.GetUserInfoReq) (resp *types.GetUserInfoResp, err error) {
 
-	uid, err := req.GetUintId()
-	if err != nil {
-		uid = l.ui.ID
-	}
+	// 强制只能读取当前登录用户自己的资料，禁止通过路径 ID 越权读他人
+	_ = req
+	uid := l.ui.ID
 	// 1. 查用户
 	user, err := l.svcCtx.Model.Gen.User.Where(l.svcCtx.Model.Gen.User.ID.Eq(uid)).WithContext(l.ctx).First()
 	if err != nil {
@@ -48,6 +47,7 @@ func (l *GetUserInfoLogic) GetUserInfo(req *types.GetUserInfoReq) (resp *types.G
 			Phone:   user.Phone,
 			Email:   user.Email,
 			Avatar:  utils.ToOssUri(types.OssBucket, user.Avatar),
+			Role:    user.Role,
 		},
 	}
 	return resp, nil

@@ -4,7 +4,7 @@
 REGISTRY := crpi-r8vfvlukq94i69ai.cn-hangzhou.personal.cr.aliyuncs.com/oujy
 BACKEND_IMAGE := $(REGISTRY)/english-study
 UI_IMAGE := $(REGISTRY)/english-study-ui
-VERSION ?= v0.0.21
+VERSION ?= v0.0.48
 
 # 代码生成
 api:

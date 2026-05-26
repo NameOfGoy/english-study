@@ -58,7 +58,7 @@ func (l *GenerateShareLogic) GenerateShare(req *types.GenerateShareReq) (*types.
 		Nonce:     NewNonce(),
 	}
 
-	token, err := EncodeToken(payload, l.svcCtx.Config.Auth.AccessSecret)
+	token, err := EncodeToken(payload, DeriveShareSecret(l.svcCtx.Config.Auth.AccessSecret))
 	if err != nil {
 		return nil, errors.ErrorRequestParamError("生成分享码失败").WithCause(err)
 	}

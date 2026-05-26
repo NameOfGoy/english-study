@@ -3,6 +3,7 @@ package tag
 import (
 	"context"
 	"english-study/internal/errors"
+	"english-study/internal/model/bean"
 	"english-study/internal/svc"
 	"english-study/internal/types"
 	"english-study/internal/utils"
@@ -32,7 +33,7 @@ func (l *GetTagListLogic) GetTagList(req *types.GetTagListReq) (resp *types.GetT
 
 	tg := l.svcCtx.Model.Gen.Tag
 
-	// 先查默认tag
+	// 系统标签 (user_id=0)
 	defaultFind := tg.WithContext(l.ctx).Where(tg.UserID.Eq(0))
 	defaultTotal, err := defaultFind.Count()
 	if err != nil {
@@ -43,24 +44,31 @@ func (l *GetTagListLogic) GetTagList(req *types.GetTagListReq) (resp *types.GetT
 		return nil, errors.ErrorDatabaseQueryError("查询默认标签失败").WithCause(err)
 	}
 
-	// 查用户tag
-	find := tg.WithContext(l.ctx).Where(tg.UserID.Eq(l.ui.ID))
-	total, err := find.Count()
-	if err != nil {
-		return nil, errors.ErrorDatabaseQueryError("查询单词总数失败").WithCause(err)
+	// 用户自己的标签 (user_id = ui.ID 且不是 0; 否则超管自己就是 user_id=0, 会和系统重复)
+	var (
+		tags  []*bean.Tag
+		total int64
+	)
+	if l.ui.ID != 0 {
+		find := tg.WithContext(l.ctx).Where(tg.UserID.Eq(l.ui.ID))
+		total, err = find.Count()
+		if err != nil {
+			return nil, errors.ErrorDatabaseQueryError("查询用户标签总数失败").WithCause(err)
+		}
+		tags, err = find.Find()
+		if err != nil {
+			return nil, errors.ErrorDatabaseQueryError("查询用户标签失败").WithCause(err)
+		}
 	}
-	tags, err := find.Find()
-	if err != nil {
-		return nil, errors.ErrorDatabaseQueryError("查询用户标签失败").WithCause(err)
-	}
-	// 合并默认tag和用户tag
+	// 合并系统标签和用户标签
 	tagList := append(defaultTags, tags...)
 
 	for _, tag := range tagList {
 		resp.Data = append(resp.Data, &types.Tag{
-			ID:    tag.ID,
-			Name:  tag.Tag,
-			Style: tag.Style,
+			ID:       tag.ID,
+			Name:     tag.Tag,
+			Style:    tag.Style,
+			IsSystem: tag.UserID == 0,
 		})
 	}
 	resp.TotalCount = total + defaultTotal

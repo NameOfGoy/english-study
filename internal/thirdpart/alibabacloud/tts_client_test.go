@@ -3,7 +3,6 @@ package alibabacloud
 import (
 	"context"
 	"reflect"
-	"sync"
 	"testing"
 	"time"
 
@@ -279,7 +278,6 @@ func TestTTSClient_TextToSpeech(t *testing.T) {
 		config    *TTSConfig
 		logger    *nls.NlsLogger
 		tokenInfo *TokenInfo
-		tokenMu   sync.RWMutex
 	}
 	type args struct {
 		ctx        context.Context
@@ -302,7 +300,6 @@ func TestTTSClient_TextToSpeech(t *testing.T) {
 				config:    tt.fields.config,
 				logger:    tt.fields.logger,
 				tokenInfo: tt.fields.tokenInfo,
-				tokenMu:   tt.fields.tokenMu,
 			}
 			got, err := c.TextToSpeech(tt.args.ctx, tt.args.text, tt.args.options, tt.args.outputPath)
 			if (err != nil) != tt.wantErr {
@@ -321,7 +318,6 @@ func TestTTSClient_TextToSpeechToBytes(t *testing.T) {
 		config    *TTSConfig
 		logger    *nls.NlsLogger
 		tokenInfo *TokenInfo
-		tokenMu   sync.RWMutex
 	}
 	type args struct {
 		ctx     context.Context
@@ -343,7 +339,6 @@ func TestTTSClient_TextToSpeechToBytes(t *testing.T) {
 				config:    tt.fields.config,
 				logger:    tt.fields.logger,
 				tokenInfo: tt.fields.tokenInfo,
-				tokenMu:   tt.fields.tokenMu,
 			}
 			got, err := c.TextToSpeechToBytes(tt.args.ctx, tt.args.text, tt.args.options)
 			if (err != nil) != tt.wantErr {
@@ -362,7 +357,6 @@ func TestTTSClient_TextToSpeechToFile(t *testing.T) {
 		config    *TTSConfig
 		logger    *nls.NlsLogger
 		tokenInfo *TokenInfo
-		tokenMu   sync.RWMutex
 	}
 	type args struct {
 		ctx      context.Context
@@ -384,7 +378,6 @@ func TestTTSClient_TextToSpeechToFile(t *testing.T) {
 				config:    tt.fields.config,
 				logger:    tt.fields.logger,
 				tokenInfo: tt.fields.tokenInfo,
-				tokenMu:   tt.fields.tokenMu,
 			}
 			if err := c.TextToSpeechToFile(tt.args.ctx, tt.args.text, tt.args.options, tt.args.filePath); (err != nil) != tt.wantErr {
 				t.Errorf("TextToSpeechToFile() error = %v, wantErr %v", err, tt.wantErr)
@@ -398,7 +391,6 @@ func TestTTSClient_getDefaultOptions(t *testing.T) {
 		config    *TTSConfig
 		logger    *nls.NlsLogger
 		tokenInfo *TokenInfo
-		tokenMu   sync.RWMutex
 	}
 	tests := []struct {
 		name   string
@@ -413,7 +405,6 @@ func TestTTSClient_getDefaultOptions(t *testing.T) {
 				config:    tt.fields.config,
 				logger:    tt.fields.logger,
 				tokenInfo: tt.fields.tokenInfo,
-				tokenMu:   tt.fields.tokenMu,
 			}
 			if got := c.getDefaultOptions(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getDefaultOptions() = %v, want %v", got, tt.want)
@@ -427,7 +418,6 @@ func TestTTSClient_getValidToken(t *testing.T) {
 		config    *TTSConfig
 		logger    *nls.NlsLogger
 		tokenInfo *TokenInfo
-		tokenMu   sync.RWMutex
 	}
 	type args struct {
 		ctx context.Context
@@ -447,7 +437,6 @@ func TestTTSClient_getValidToken(t *testing.T) {
 				config:    tt.fields.config,
 				logger:    tt.fields.logger,
 				tokenInfo: tt.fields.tokenInfo,
-				tokenMu:   tt.fields.tokenMu,
 			}
 			got, err := c.getValidToken(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
@@ -466,7 +455,6 @@ func TestTTSClient_mergeOptions(t *testing.T) {
 		config    *TTSConfig
 		logger    *nls.NlsLogger
 		tokenInfo *TokenInfo
-		tokenMu   sync.RWMutex
 	}
 	type args struct {
 		userOptions *TTSOptions
@@ -485,7 +473,6 @@ func TestTTSClient_mergeOptions(t *testing.T) {
 				config:    tt.fields.config,
 				logger:    tt.fields.logger,
 				tokenInfo: tt.fields.tokenInfo,
-				tokenMu:   tt.fields.tokenMu,
 			}
 			if got := c.mergeOptions(tt.args.userOptions); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("mergeOptions() = %v, want %v", got, tt.want)
@@ -499,7 +486,6 @@ func TestTTSClient_refreshToken(t *testing.T) {
 		config    *TTSConfig
 		logger    *nls.NlsLogger
 		tokenInfo *TokenInfo
-		tokenMu   sync.RWMutex
 	}
 	type args struct {
 		ctx context.Context
@@ -519,7 +505,6 @@ func TestTTSClient_refreshToken(t *testing.T) {
 				config:    tt.fields.config,
 				logger:    tt.fields.logger,
 				tokenInfo: tt.fields.tokenInfo,
-				tokenMu:   tt.fields.tokenMu,
 			}
 			got, err := c.refreshToken(tt.args.ctx)
 			if (err != nil) != tt.wantErr {
@@ -538,7 +523,6 @@ func TestTTSClient_saveAudioFile(t *testing.T) {
 		config    *TTSConfig
 		logger    *nls.NlsLogger
 		tokenInfo *TokenInfo
-		tokenMu   sync.RWMutex
 	}
 	type args struct {
 		audioData []byte
@@ -558,7 +542,6 @@ func TestTTSClient_saveAudioFile(t *testing.T) {
 				config:    tt.fields.config,
 				logger:    tt.fields.logger,
 				tokenInfo: tt.fields.tokenInfo,
-				tokenMu:   tt.fields.tokenMu,
 			}
 			if err := c.saveAudioFile(tt.args.audioData, tt.args.filePath); (err != nil) != tt.wantErr {
 				t.Errorf("saveAudioFile() error = %v, wantErr %v", err, tt.wantErr)

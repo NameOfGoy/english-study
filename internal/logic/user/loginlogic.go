@@ -55,7 +55,7 @@ func (l *LoginLogic) Login(req *types.UserLoginReq) (resp *types.UserLoginResp, 
 	}
 
 	// 登录成功，返回token
-	token, err := utils.GenerateToken(l.svcCtx.Config.Auth.AccessSecret, time.Now().Unix(), l.svcCtx.Config.Auth.AccessExpire, user.ID, user.Username)
+	token, err := utils.GenerateToken(l.svcCtx.Config.Auth.AccessSecret, time.Now().Unix(), l.svcCtx.Config.Auth.AccessExpire, user.ID, user.Username, user.Role)
 	if err != nil {
 		return nil, errors.ErrorTokenGenerateError("生成token失败").WithCause(err)
 	}
@@ -69,6 +69,7 @@ func (l *LoginLogic) Login(req *types.UserLoginReq) (resp *types.UserLoginResp, 
 			Avatar:  utils.ToOssUri(types.OssBucket, user.Avatar),
 			Phone:   user.Phone,
 			Account: user.Account,
+			Role:    user.Role,
 		},
 	}, nil
 }

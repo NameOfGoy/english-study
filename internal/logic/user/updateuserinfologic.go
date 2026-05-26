@@ -30,10 +30,8 @@ func NewUpdateUserInfoLogic(ctx context.Context, svcCtx *svc.ServiceContext, ui 
 
 func (l *UpdateUserInfoLogic) UpdateUserInfo(req *types.UpdateUserInfoReq) (resp *types.UpdateUserInfoResp, err error) {
 
-	uid, err := req.GetUintId()
-	if err != nil {
-		uid = l.ui.ID
-	}
+	// 强制只能更新当前登录用户自己的资料，禁止通过路径 ID 越权改他人
+	uid := l.ui.ID
 	// 1. 查用户
 	user, err := l.svcCtx.Model.Gen.User.Where(l.svcCtx.Model.Gen.User.ID.Eq(uid)).WithContext(l.ctx).First()
 	if err != nil {

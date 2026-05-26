@@ -32,6 +32,7 @@ func newWord(db *gorm.DB, opts ...gen.DOOption) word {
 	_word.AmericanPronunciationAudio = field.NewString(tableName, "american_pronunciation_audio")
 	_word.BritishPronunciation = field.NewString(tableName, "british_pronunciation")
 	_word.BritishPronunciationAudio = field.NewString(tableName, "british_pronunciation_audio")
+	_word.Source = field.NewString(tableName, "source")
 	_word.CreatedAt = field.NewTime(tableName, "created_at")
 
 	_word.fillFieldMap()
@@ -49,6 +50,7 @@ type word struct {
 	AmericanPronunciationAudio field.String
 	BritishPronunciation       field.String
 	BritishPronunciationAudio  field.String
+	Source                     field.String
 	CreatedAt                  field.Time
 
 	fieldMap map[string]field.Expr
@@ -72,6 +74,7 @@ func (w *word) updateTableName(table string) *word {
 	w.AmericanPronunciationAudio = field.NewString(table, "american_pronunciation_audio")
 	w.BritishPronunciation = field.NewString(table, "british_pronunciation")
 	w.BritishPronunciationAudio = field.NewString(table, "british_pronunciation_audio")
+	w.Source = field.NewString(table, "source")
 	w.CreatedAt = field.NewTime(table, "created_at")
 
 	w.fillFieldMap()
@@ -89,13 +92,14 @@ func (w *word) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (w *word) fillFieldMap() {
-	w.fieldMap = make(map[string]field.Expr, 7)
+	w.fieldMap = make(map[string]field.Expr, 8)
 	w.fieldMap["id"] = w.ID
 	w.fieldMap["word"] = w.Word
 	w.fieldMap["american_pronunciation"] = w.AmericanPronunciation
 	w.fieldMap["american_pronunciation_audio"] = w.AmericanPronunciationAudio
 	w.fieldMap["british_pronunciation"] = w.BritishPronunciation
 	w.fieldMap["british_pronunciation_audio"] = w.BritishPronunciationAudio
+	w.fieldMap["source"] = w.Source
 	w.fieldMap["created_at"] = w.CreatedAt
 }
 

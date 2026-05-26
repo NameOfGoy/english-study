@@ -28,14 +28,16 @@ service englishstudy-api {
 }
 
 type Tag {
-	ID    uint   `json:"id"` // 标签ID
-	Name  string `json:"name"` // 标签名称
-	Style string `json:"style"` // 标签样式
+	ID       uint   `json:"id"`
+	Name     string `json:"name"`
+	Style    string `json:"style"`
+	IsSystem bool   `json:"is_system"` // 是否系统标签 (user_id=0)
 }
 
 type AddTagReq {
-	Name  string `json:"name"` // 标签名称
-	Style string `json:"style"` // 标签样式
+	Name     string `json:"name"`
+	Style    string `json:"style"`
+	IsSystem bool   `json:"is_system,optional"` // true=系统标签, 仅超管可设
 }
 
 type AddTagResp {

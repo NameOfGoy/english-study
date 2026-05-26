@@ -4,6 +4,7 @@ import (
 	"context"
 	"english-study/internal/errors"
 	"english-study/internal/model/bean"
+	"english-study/internal/utils"
 	e "errors"
 
 	"gorm.io/gorm"
@@ -47,10 +48,14 @@ func (l *RegisterLogic) Register(req *types.UserRegisterReq) (resp *types.UserRe
 		// 账号已存在
 		return nil, errors.ErrorAccountExistError("账号已存在")
 	}
-	// 3. 创建用户
+	// 3. 创建用户（密码用 PBKDF2 哈希后存储）
+	hashedPwd, err := utils.HashPassword(req.Password)
+	if err != nil {
+		return nil, errors.ErrorDatabaseInsertError("密码处理失败").WithCause(err)
+	}
 	user := &bean.User{
 		Account:  req.Account,
-		Password: req.Password,
+		Password: hashedPwd,
 		Username: req.Name,
 		Phone:    req.Phone,
 		Email:    req.Email,

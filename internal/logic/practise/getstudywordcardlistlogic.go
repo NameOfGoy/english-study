@@ -40,6 +40,10 @@ func (l *GetStudyWordCardListLogic) GetStudyWordCardList(req *types.GetWordCardL
 	if req.WordType != 0 {
 		find = find.Where(wsg.WordType.Eq(req.WordType))
 	}
+	find, err = applyTagFilter(l.ctx, l.svcCtx.Model, find, l.ui.ID, req.TagIDs)
+	if err != nil {
+		return nil, errors.ErrorDatabaseQueryError("应用标签筛选失败").WithCause(err)
+	}
 	var wss []*bean.WordStatus
 	if !req.Random {
 		// 按创建时间倒序

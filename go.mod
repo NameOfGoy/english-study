@@ -22,6 +22,13 @@ require (
 )
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.2
+	github.com/NameOfGoy/resource-eventbus v0.2.0
+)
+
+require github.com/asaskevich/EventBus v0.0.0-20200907212545-49d423059eef
+
+require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.1376 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect

@@ -11,7 +11,19 @@ type User struct {
 	Phone     string    `gorm:"type:varchar(20);comment:手机"`                        // 手机
 	Email     string    `gorm:"type:varchar(100);comment:邮箱"`                       // 邮箱
 	Avatar    string    `gorm:"type:varchar(255);comment:头像"`                       // 头像
+	Role      int       `gorm:"column:role;not null;default:0;index;comment:角色 0-普通 1-超管"`
 	LastLogin time.Time `gorm:"comment:最后登录时间"`                                     // 最后登录时间
 	CreatedAt time.Time `gorm:"autoCreateTime;comment:创建时间"`                        // 创建时间
 	UpdatedAt time.Time `gorm:"autoUpdateTime;comment:更新时间"`                        // 更新时间
+}
+
+// 角色常量
+const (
+	RoleNormal = 0 // 普通用户
+	RoleAdmin  = 1 // 超管
+)
+
+// IsAdmin 是否超管
+func (u *User) IsAdmin() bool {
+	return u.Role == RoleAdmin
 }

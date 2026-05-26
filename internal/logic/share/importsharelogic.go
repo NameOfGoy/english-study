@@ -15,6 +15,13 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// TagImportMode 枚举
+const (
+	TagImportNone       = 0 // 不带任何标签
+	TagImportSystemOnly = 1 // 仅同步系统标签 (tags.user_id=0) 关联
+	TagImportAll        = 2 // 全部 (系统 + 源用户自建)
+)
+
 type ImportShareLogic struct {
 	logx.Logger
 	ctx    context.Context
@@ -68,9 +75,9 @@ func (l *ImportShareLogic) ImportShare(req *types.ImportShareReq) (*types.Import
 		resp.PhraseSkipped = skipped
 	}
 
-	// 导入标签关联（如果用户选了）
-	if req.ImportTags {
-		n, err := l.importTags(sourceUserID, wordIDs, phraseIDs)
+	// 导入标签关联. mode: 0-不带 (默认) 1-仅系统 2-全部
+	if req.TagImportMode == TagImportSystemOnly || req.TagImportMode == TagImportAll {
+		n, err := l.importTags(sourceUserID, wordIDs, phraseIDs, req.TagImportMode)
 		if err != nil {
 			logx.Errorf("导入标签失败(不阻塞主流程): %v", err)
 		} else {
@@ -232,11 +239,20 @@ func (l *ImportShareLogic) importPhrases(sourceUserID uint, sourcePhraseIDs []ui
 	return imported, skipped, nil
 }
 
-// importTags 把 A 的标签和 word_tags 关联也复刻到 B 的库
-// 同名标签合并到 B 已有的；新名字则新建一个 B 自己的 tag
-// 返回新建的标签数
-func (l *ImportShareLogic) importTags(sourceUserID uint, sourceWordIDs, sourcePhraseIDs []uint) (int, error) {
-	// 1. 找 A 的所有 word_tags 关联（针对要导入的 word/phrase）
+// importTags 把 A 的标签和 word_tags 关联按 mode 复刻到 B 的库.
+//
+//	mode = TagImportSystemOnly: 只同步那些指向系统标签 (tags.user_id=0) 的关联,
+//	    直接复用同 tag_id (系统标签全局共享).
+//	mode = TagImportAll:        系统标签按上述方式; 同时把 A 的用户标签按字符串匹配
+//	    挂到 B 已有同名标签, 没有就在 B 新建.
+//
+// 返回新建的标签数 (B 端真正多出来的 tag 行, 系统标签不计).
+func (l *ImportShareLogic) importTags(sourceUserID uint, sourceWordIDs, sourcePhraseIDs []uint, mode int) (int, error) {
+	if mode != TagImportSystemOnly && mode != TagImportAll {
+		return 0, nil
+	}
+
+	// 1. 找 A 的所有 word_tags 关联 (针对要导入的 word/phrase); 含指向系统标签的
 	var srcRelations []bean.WordTag
 	q := l.svcCtx.Model.DB.WithContext(l.ctx).
 		Where("user_id = ?", sourceUserID)
@@ -266,44 +282,59 @@ func (l *ImportShareLogic) importTags(sourceUserID uint, sourceWordIDs, sourcePh
 		tagIDs = append(tagIDs, id)
 	}
 
-	// 3. 取 A 的 tag 详情
+	// 3. 取所有涉及到的 tag 详情 (系统的 user_id=0 + 源用户的 user_id=sourceUserID)
 	var srcTags []bean.Tag
 	if err := l.svcCtx.Model.DB.WithContext(l.ctx).
-		Where("id IN ? AND user_id = ?", tagIDs, sourceUserID).
+		Where("id IN ?", tagIDs).
+		Where("user_id = ? OR user_id = 0", sourceUserID).
 		Find(&srcTags).Error; err != nil {
 		return 0, err
 	}
 
-	// 4. 查 B 已有的同名标签
-	tagNames := make([]string, 0, len(srcTags))
+	// 拆分: 系统 vs 用户
+	var systemTags, userTags []bean.Tag
 	for _, t := range srcTags {
-		tagNames = append(tagNames, t.Tag)
-	}
-	var bExistTags []bean.Tag
-	if err := l.svcCtx.Model.DB.WithContext(l.ctx).
-		Where("user_id = ? AND tag IN ?", l.ui.ID, tagNames).
-		Find(&bExistTags).Error; err != nil {
-		// 这里若失败, 后续会把 B 已有同名标签当不存在而重复创建. 返回 err 让上层放弃此次导入更安全.
-		return 0, fmt.Errorf("查 B 已有标签失败: %w", err)
-	}
-	bTagByName := map[string]uint{}
-	for _, t := range bExistTags {
-		bTagByName[t.Tag] = t.ID
+		if t.UserID == 0 {
+			systemTags = append(systemTags, t)
+		} else {
+			userTags = append(userTags, t)
+		}
 	}
 
-	// 5. A.tag_id -> B.tag_id 映射；缺失的新建到 B
 	srcToDstTag := map[uint]uint{}
 	newTagCount := 0
-	for _, t := range srcTags {
-		if bID, ok := bTagByName[t.Tag]; ok {
-			srcToDstTag[t.ID] = bID
-		} else {
+
+	// 系统标签: tag_id 全局共享, 直接复用
+	for _, t := range systemTags {
+		srcToDstTag[t.ID] = t.ID
+	}
+
+	// 用户标签: 仅 mode=all 处理
+	if mode == TagImportAll && len(userTags) > 0 {
+		tagNames := make([]string, 0, len(userTags))
+		for _, t := range userTags {
+			tagNames = append(tagNames, t.Tag)
+		}
+		var bExistTags []bean.Tag
+		if err := l.svcCtx.Model.DB.WithContext(l.ctx).
+			Where("user_id = ? AND tag IN ?", l.ui.ID, tagNames).
+			Find(&bExistTags).Error; err != nil {
+			return 0, fmt.Errorf("查 B 已有标签失败: %w", err)
+		}
+		bTagByName := map[string]uint{}
+		for _, t := range bExistTags {
+			bTagByName[t.Tag] = t.ID
+		}
+		for _, t := range userTags {
+			if bID, ok := bTagByName[t.Tag]; ok {
+				srcToDstTag[t.ID] = bID
+				continue
+			}
 			newTag := bean.Tag{
 				Tag:    t.Tag,
 				Style:  t.Style,
 				UserID: l.ui.ID,
 			}
-			// ON CONFLICT DO NOTHING: 由 unique 索引 (user_id, tag) 兜底防并发重复
 			if err := l.svcCtx.Model.DB.WithContext(l.ctx).
 				Clauses(clause.OnConflict{DoNothing: true}).
 				Create(&newTag).Error; err != nil {

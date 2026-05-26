@@ -4,11 +4,9 @@ import (
 	"context"
 	"english-study/internal/errors"
 	"english-study/internal/model/bean"
-	"english-study/internal/utils"
-	"fmt"
-
 	"english-study/internal/svc"
 	"english-study/internal/types"
+	"english-study/internal/utils"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
@@ -58,14 +56,22 @@ func (l *GetWordListLogic) GetWordList(req *types.GetWordListReq) (resp *types.G
 		find = find.Limit(req.Limit)
 	}
 	if req.OrderBy != "" {
-		if _, ok := l.svcCtx.Model.Gen.Word.GetFieldByName(req.OrderBy); !ok {
-			return nil, errors.ErrorRequestParamError("排序字段不存在")
+		// 严格白名单，禁止任何用户输入直接拼进 ORDER BY
+		allowedOrderBy := map[string]string{
+			"word":       "word",
+			"created_at": "created_at",
+			"updated_at": "updated_at",
+			"id":         "id",
 		}
-		sort := "asc"
+		col, ok := allowedOrderBy[req.OrderBy]
+		if !ok {
+			return nil, errors.ErrorRequestParamError("排序字段不允许")
+		}
+		direction := "asc"
 		if req.Sort == "desc" {
-			sort = req.Sort
+			direction = "desc"
 		}
-		find = find.Order(fmt.Sprintf("%s %s", req.OrderBy, sort))
+		find = find.Order(col + " " + direction)
 	}
 	var words []*bean.Word
 	err = find.Find(&words).Error

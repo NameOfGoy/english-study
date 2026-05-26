@@ -38,6 +38,7 @@ func newWordStatus(db *gorm.DB, opts ...gen.DOOption) wordStatus {
 	_wordStatus.NextReviewAt = field.NewTime(tableName, "next_review_at")
 	_wordStatus.Repetitions = field.NewInt(tableName, "repetitions")
 	_wordStatus.UserID = field.NewUint(tableName, "user_id")
+	_wordStatus.SourceUserID = field.NewUint(tableName, "source_user_id")
 	_wordStatus.CreatedAt = field.NewTime(tableName, "created_at")
 	_wordStatus.UpdatedAt = field.NewTime(tableName, "updated_at")
 
@@ -62,6 +63,7 @@ type wordStatus struct {
 	NextReviewAt field.Time
 	Repetitions  field.Int
 	UserID       field.Uint
+	SourceUserID field.Uint
 	CreatedAt    field.Time
 	UpdatedAt    field.Time
 
@@ -92,6 +94,7 @@ func (w *wordStatus) updateTableName(table string) *wordStatus {
 	w.NextReviewAt = field.NewTime(table, "next_review_at")
 	w.Repetitions = field.NewInt(table, "repetitions")
 	w.UserID = field.NewUint(table, "user_id")
+	w.SourceUserID = field.NewUint(table, "source_user_id")
 	w.CreatedAt = field.NewTime(table, "created_at")
 	w.UpdatedAt = field.NewTime(table, "updated_at")
 
@@ -110,7 +113,7 @@ func (w *wordStatus) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (w *wordStatus) fillFieldMap() {
-	w.fieldMap = make(map[string]field.Expr, 14)
+	w.fieldMap = make(map[string]field.Expr, 15)
 	w.fieldMap["id"] = w.ID
 	w.fieldMap["word_id"] = w.WordID
 	w.fieldMap["word_type"] = w.WordType
@@ -123,6 +126,7 @@ func (w *wordStatus) fillFieldMap() {
 	w.fieldMap["next_review_at"] = w.NextReviewAt
 	w.fieldMap["repetitions"] = w.Repetitions
 	w.fieldMap["user_id"] = w.UserID
+	w.fieldMap["source_user_id"] = w.SourceUserID
 	w.fieldMap["created_at"] = w.CreatedAt
 	w.fieldMap["updated_at"] = w.UpdatedAt
 }

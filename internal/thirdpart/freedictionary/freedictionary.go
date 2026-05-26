@@ -7,12 +7,16 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
 var (
 	freeDictionaryApi = "https://api.dictionaryapi.dev/api/v2/entries/en/"
+
+	// 第三方公共字典 API 偶尔会很慢；用 10s 超时 + 复用连接池
+	httpClient = &http.Client{Timeout: 10 * time.Second}
 )
 
 type License struct {
@@ -51,7 +55,12 @@ type DictionaryEntry struct {
 
 func Query(ctx context.Context, word string) (entry *DictionaryEntry, err error) {
 	url := freeDictionaryApi + word
-	resp, err := http.Get(url)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		logx.Errorf("freedictionary build req err: %v", err)
+		return nil, err
+	}
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		logx.Errorf("freedictionary Query err: %v", err)
 		return nil, err
