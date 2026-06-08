@@ -1,0 +1,204 @@
+syntax = "v1"
+
+// ===== 通用渲染类型 =====
+
+// ArticleSentence 双语句子
+type ArticleSentence {
+	En string `json:"en"` // 英文
+	Zh string `json:"zh"` // 中文
+}
+
+// ArticleSense 一个词性下的释义(气泡卡按词性分行展示)
+type ArticleSense {
+	PosLabel string `json:"pos_label"` // 词性缩写, 如 n. / vt. / vi.
+	Meaning  string `json:"meaning"` // 该词性下的中文释义
+}
+
+// ArticleUsedWord 文章用到的词条: 原型 + 正文字面形态(高亮) + 补齐的简要信息(气泡卡)
+type ArticleUsedWord {
+	WordID   uint            `json:"word_id"` // 词条ID(收录时建 article_words 用)
+	WordType int             `json:"word_type"` // 1-单词 2-短语
+	Word     string          `json:"word"` // 原型
+	Surfaces []string        `json:"surfaces"` // 正文中出现的字面形式(含变形)
+	PosLabel string          `json:"pos_label"` // 主词性缩写(兼容; 气泡卡优先用 senses)
+	Meaning  string          `json:"meaning"` // 合并释义(兼容)
+	Senses   []ArticleSense  `json:"senses"` // 全部词性+释义, 气泡卡按词性分行
+	Phonetic string          `json:"phonetic"` // 音标(后端补齐)
+	Found    bool            `json:"found"` // 词条当前是否仍存在于词库
+}
+
+// ArticleTag 文章标签(并集去重, 查询时实时计算)
+type ArticleTag {
+	TagID uint   `json:"tag_id"`
+	Name  string `json:"name"`
+	Style string `json:"style"`
+}
+
+// ArticleView 文章完整渲染体(即时生成 / 详情共用)
+type ArticleView {
+	ID        uint               `json:"id"` // 未收录时为 0
+	TitleEn   string             `json:"title_en"`
+	TitleZh   string             `json:"title_zh"`
+	Tags      []ArticleTag       `json:"tags"` // 计算得到
+	Sentences []ArticleSentence  `json:"sentences"`
+	UsedWords []ArticleUsedWord  `json:"used_words"`
+	CreatedAt string             `json:"created_at,optional"`
+}
+
+// SelfSelectWord 自选/收录时按 id 引用词条
+type SelfSelectWord {
+	WordID   uint `json:"word_id"`
+	WordType int  `json:"word_type"` // 1-单词 2-短语
+}
+
+// ===== 1. 即时生成(同步, 60s) =====
+
+type GenerateArticleReq {
+	Method   int              `json:"method"` // 1-随机 2-自选
+	Count    int              `json:"count,optional"` // 随机词数 3~8
+	Status   int              `json:"status,optional"` // 词状态 0-全部 1-学习 2-复习 3-强化 4-完成
+	Category int              `json:"category,optional"` // 类别 1-标签 2-单词 3-词语 4-全部
+	TagIDs   []uint           `json:"tag_ids,optional"` // category=1 时生效
+	Words    []SelfSelectWord `json:"words,optional"` // method=2 自选时的词条
+}
+
+type GenerateArticleResp {
+	CommonReply
+	Data ArticleView `json:"data"` // ID=0, 未持久化
+}
+
+// ===== 2. 自选候选词列表 =====
+
+type ArticleCandidate {
+	WordID   uint   `json:"word_id"`
+	WordType int    `json:"word_type"`
+	Word     string `json:"word"`
+	PosLabel string `json:"pos_label"`
+	Meaning  string `json:"meaning"`
+	Phonetic string `json:"phonetic"`
+}
+
+type ArticleCandidatesReq {
+	Status   int    `form:"status,optional"` // 0-全部 1-4
+	Category int    `form:"category,optional"` // 1-标签 2-单词 3-词语 4-全部
+	TagIDs   []uint `form:"tag_ids,optional"`
+}
+
+type ArticleCandidatesResp {
+	CommonReply
+	Data []*ArticleCandidate `json:"data"`
+}
+
+// ===== 3. 收录 =====
+
+type SaveArticleReq {
+	TitleEn   string            `json:"title_en"`
+	TitleZh   string            `json:"title_zh"`
+	Sentences []ArticleSentence `json:"sentences"`
+	UsedWords []ArticleUsedWord `json:"used_words"` // 含 word_id/word_type/word/surfaces
+}
+
+type SaveArticleResp {
+	CommonReply
+	ID uint `json:"id"`
+}
+
+// ===== 4. 收录列表(分页+搜索) =====
+
+type ArticleListItem {
+	ID        uint         `json:"id"`
+	TitleEn   string       `json:"title_en"`
+	TitleZh   string       `json:"title_zh"`
+	Tags      []ArticleTag `json:"tags"`
+	Words     []string     `json:"words"` // 含词原文(小字展示)
+	CreatedAt string       `json:"created_at"`
+}
+
+type ListArticleReq {
+	PageReq
+	Keyword string `form:"keyword,optional"` // 标题(中英)+含词(英文) 共用
+	TagIDs  []uint `form:"tag_ids,optional"` // 标签多选
+}
+
+type ListArticleResp {
+	CommonReply
+	PageReply
+	Data []*ArticleListItem `json:"data"`
+}
+
+// ===== 5. 详情 =====
+
+type ArticleDetailReq {
+	ID uint `form:"id"`
+}
+
+type ArticleDetailResp {
+	CommonReply
+	Data ArticleView `json:"data"`
+}
+
+// ===== 6. 词条简要批量(按文本) =====
+
+type WordTextItem {
+	Word string `json:"word"`
+	Type int    `json:"type"` // 1-单词 2-短语
+}
+
+type WordBriefItem {
+	Word     string         `json:"word"`
+	Type     int            `json:"type"`
+	PosLabel string         `json:"pos_label"`
+	Meaning  string         `json:"meaning"`
+	Senses   []ArticleSense `json:"senses"`
+	Phonetic string         `json:"phonetic"`
+	Found    bool           `json:"found"`
+}
+
+type WordsInfoReq {
+	Words []WordTextItem `json:"words"`
+}
+
+type WordsInfoResp {
+	CommonReply
+	Data []*WordBriefItem `json:"data"`
+}
+
+// 即时生成单独一个 @server 块加 60s 超时(AI 调用较慢), 与其它路由隔离
+@server (
+	group:   article
+	jwt:     Auth
+	timeout: 60s
+	prefix:  api/v1/practise/article
+)
+service englishstudy-api {
+	@doc "文章练习/即时生成(同步)"
+	@handler GenerateArticle
+	post /generate (GenerateArticleReq) returns (GenerateArticleResp)
+}
+
+@server (
+	group:  article
+	jwt:    Auth
+	prefix: api/v1/practise/article
+)
+service englishstudy-api {
+	@doc "文章练习/自选候选词"
+	@handler ArticleCandidates
+	get /candidates (ArticleCandidatesReq) returns (ArticleCandidatesResp)
+
+	@doc "文章练习/收录"
+	@handler SaveArticle
+	post /save (SaveArticleReq) returns (SaveArticleResp)
+
+	@doc "文章练习/收录列表"
+	@handler ListArticle
+	get /list (ListArticleReq) returns (ListArticleResp)
+
+	@doc "文章练习/详情"
+	@handler ArticleDetail
+	get /detail (ArticleDetailReq) returns (ArticleDetailResp)
+
+	@doc "文章练习/词条简要批量"
+	@handler WordsInfo
+	post /words/info (WordsInfoReq) returns (WordsInfoResp)
+}

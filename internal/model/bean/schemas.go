@@ -10,4 +10,6 @@ var Schemas = []interface{}{
 	&WordTag{},
 	&WordStatus{},
 	&ImportTask{},
+	&Article{},
+	&ArticleWord{},
 }
