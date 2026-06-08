@@ -191,23 +191,22 @@ func (l *ImportWordLogic) ImportWord(req *types.ImportWordReq) (resp *types.Impo
 	}, nil
 }
 
-// findOrCreateUserTag 找当前用户名下同名标签; 没有就建一个; 系统标签 (user_id=0) 同名也算"已存在"复用
-// findOrCreateTagForImport 按名字找标签 ID, 找不到则在当前用户名下新建.
+// findOrCreateUserTag 找当前用户可见的同名标签; 没有就在当前用户名下新建.
 // 优先级 (字符串全等匹配, 同名时):
-//  1. 系统标签 (user_id=0) — 共享, 不污染私人空间
-//  2. 当前用户自己的标签
-// 找不到任何同名时, 创建为当前用户的用户级标签 (不会自动创建系统标签).
+//  1. 系统标签 (is_system=true) — 共享, 不污染私人空间
+//  2. 当前用户自己的私有标签
+// 找不到任何同名时, 创建为当前用户的用户级标签 (is_system=false, 不会自动创建系统标签).
 func (l *ImportWordLogic) findOrCreateUserTag(ctx context.Context, name string) (uint, error) {
 	tg := l.svcCtx.Model.Gen.Tag
 	got, err := tg.WithContext(ctx).
 		Where(tg.Tag.Eq(name)).
-		Where(tg.WithContext(ctx).Where(tg.UserID.Eq(l.ui.ID)).Or(tg.UserID.Eq(0))).
-		Order(tg.UserID.Asc()). // user_id=0 (系统) 排最前, 同名时优先用系统标签
+		Where(tg.WithContext(ctx).Where(tg.IsSystem.Is(true)).Or(tg.UserID.Eq(l.ui.ID))).
+		Order(tg.IsSystem.Desc()). // 系统标签 (is_system=true) 排最前, 同名时优先用系统标签
 		First()
 	if err == nil {
 		return got.ID, nil
 	}
-	// 没有同名: 创建用户级标签
+	// 没有同名: 创建用户级标签 (is_system 默认 false)
 	newTag := &bean.Tag{Tag: name, UserID: l.ui.ID}
 	if err := tg.WithContext(ctx).
 		Clauses(clause.OnConflict{DoNothing: true}).

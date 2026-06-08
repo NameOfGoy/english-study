@@ -31,7 +31,7 @@ type Tag {
 	ID       uint   `json:"id"`
 	Name     string `json:"name"`
 	Style    string `json:"style"`
-	IsSystem bool   `json:"is_system"` // 是否系统标签 (user_id=0)
+	IsSystem bool   `json:"is_system"` // 是否系统标签 (is_system=true, 对所有用户可见)
 }
 
 type AddTagReq {

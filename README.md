@@ -12,7 +12,7 @@
   - stardict 缺失词条时 AI 兜底生成（音标 / 释义 / 词形变化）
   - **导入文件支持标签语法**：`[tag]` 段标签 / `[---]` 终止符 / 行末内联 `apple [t1] [t2]` 多标签，详见 [`docs/import-format.txt`](docs/import-format.txt)
 - **标签系统（分级）**
-  - **系统标签**（`tag.user_id=0`）：所有用户可用，**仅超管可增删改**
+  - **系统标签**（`tag.is_system=true`）：所有用户可用，**仅超管可增删改**（不再用 `user_id=0` 作哨兵——真实用户 id 也可能是 0）
   - **用户标签**：按用户隔离，本人增删改
   - 同名优先复用：导入解析时系统标签 > 用户已有 > 自动新建用户级
   - 删除采用进程内事件总线 [resource-eventbus](https://github.com/NameOfGoy/resource-eventbus) 异步级联清 `word_tags`，启动孤儿 reaper 兜底

@@ -37,7 +37,7 @@ func (l *DeleteTagLogic) DeleteTag(req *types.DeleteTagReq) (*types.DeleteTagRes
 	if err != nil {
 		return nil, errors.ErrorDatabaseQueryError("标签不存在").WithCause(err)
 	}
-	if !canMutateTag(l.ui, target.UserID) {
+	if !canMutateTag(l.ui, target.IsSystem, target.UserID) {
 		return nil, errors.ErrorPermissionError("无权删除该标签")
 	}
 
@@ -46,11 +46,11 @@ func (l *DeleteTagLogic) DeleteTag(req *types.DeleteTagReq) (*types.DeleteTagRes
 		return nil, errors.ErrorDatabaseDeleteError("删除标签失败").WithCause(err)
 	}
 
-	// 3. 发事件: 订阅者跑 DELETE FROM word_tags WHERE tag_id=? [AND user_id=?]
-	//    最坏情况(进程崩) 由启动时 ReapOrphanWordTags 兜底
-	eventbus.TagDeleted.PublishAsync(eventbus.TagDeletedPayload{
+	// 3. 发事件: 依赖该资源的模块自行订阅清理 (当前是 wordtagsub 清 word_tags),
+	//    最坏情况 (进程崩) 由 wordtagsub.ReapOrphanWordTags 启动兜底
+	eventbus.Tag().Deleted().PublishAsync(eventbus.TagDeletedPayload{
 		TagID:    target.ID,
-		IsSystem: target.UserID == 0,
+		IsSystem: target.IsSystem,
 		UserID:   target.UserID,
 	})
 

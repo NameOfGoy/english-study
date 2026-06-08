@@ -40,22 +40,25 @@ func (l *AddTagLogic) AddTag(req *types.AddTagReq) (*types.AddTagResp, error) {
 	}
 
 	// 系统标签需要超管权限; 鉴权依据是 JWT 解出来的 role, 不读请求体的其它字段
+	// 系统标签: is_system=true(对所有人可见), user_id 置 0(无私人归属); 用户标签: is_system=false, user_id=本人
+	isSystem := false
 	ownerID := l.ui.ID
 	if req.IsSystem {
 		if err := utils.RequireAdmin(l.ui); err != nil {
 			return nil, errors.ErrorPermissionError("仅超管可创建系统标签")
 		}
+		isSystem = true
 		ownerID = 0
 	}
 
 	tg := l.svcCtx.Model.Gen.Tag
 
-	// 重名检查: 同名查 (owner + 系统标签); 系统标签 owner=0 时, "系统标签" 那部分等价于自身, 不必再 union
+	// 重名检查: 与"系统标签"或"自己的私有标签"同名都算冲突
 	q := tg.WithContext(l.ctx).Where(tg.Tag.Eq(name))
-	if ownerID == 0 {
-		q = q.Where(tg.UserID.Eq(0))
+	if isSystem {
+		q = q.Where(tg.IsSystem.Is(true))
 	} else {
-		q = q.Where(tg.WithContext(l.ctx).Where(tg.UserID.Eq(ownerID)).Or(tg.UserID.Eq(0)))
+		q = q.Where(tg.WithContext(l.ctx).Where(tg.IsSystem.Is(true)).Or(tg.UserID.Eq(ownerID)))
 	}
 	cnt, err := q.Count()
 	if err != nil {
@@ -66,9 +69,10 @@ func (l *AddTagLogic) AddTag(req *types.AddTagReq) (*types.AddTagResp, error) {
 	}
 
 	if err := tg.WithContext(l.ctx).Create(&bean.Tag{
-		Tag:    name,
-		Style:  req.Style,
-		UserID: ownerID,
+		Tag:      name,
+		Style:    req.Style,
+		UserID:   ownerID,
+		IsSystem: isSystem,
 	}); err != nil {
 		return nil, errors.ErrorDatabaseInsertError("创建标签失败").WithCause(err)
 	}

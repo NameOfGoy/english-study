@@ -18,7 +18,7 @@ import (
 // TagImportMode 枚举
 const (
 	TagImportNone       = 0 // 不带任何标签
-	TagImportSystemOnly = 1 // 仅同步系统标签 (tags.user_id=0) 关联
+	TagImportSystemOnly = 1 // 仅同步系统标签 (tags.is_system=true) 关联
 	TagImportAll        = 2 // 全部 (系统 + 源用户自建)
 )
 
@@ -241,7 +241,7 @@ func (l *ImportShareLogic) importPhrases(sourceUserID uint, sourcePhraseIDs []ui
 
 // importTags 把 A 的标签和 word_tags 关联按 mode 复刻到 B 的库.
 //
-//	mode = TagImportSystemOnly: 只同步那些指向系统标签 (tags.user_id=0) 的关联,
+//	mode = TagImportSystemOnly: 只同步那些指向系统标签 (tags.is_system=true) 的关联,
 //	    直接复用同 tag_id (系统标签全局共享).
 //	mode = TagImportAll:        系统标签按上述方式; 同时把 A 的用户标签按字符串匹配
 //	    挂到 B 已有同名标签, 没有就在 B 新建.
@@ -282,11 +282,11 @@ func (l *ImportShareLogic) importTags(sourceUserID uint, sourceWordIDs, sourcePh
 		tagIDs = append(tagIDs, id)
 	}
 
-	// 3. 取所有涉及到的 tag 详情 (系统的 user_id=0 + 源用户的 user_id=sourceUserID)
+	// 3. 取所有涉及到的 tag 详情 (系统标签 is_system=true + 源用户自己的标签 user_id=sourceUserID)
 	var srcTags []bean.Tag
 	if err := l.svcCtx.Model.DB.WithContext(l.ctx).
 		Where("id IN ?", tagIDs).
-		Where("user_id = ? OR user_id = 0", sourceUserID).
+		Where("user_id = ? OR is_system = true", sourceUserID).
 		Find(&srcTags).Error; err != nil {
 		return 0, err
 	}
@@ -294,7 +294,7 @@ func (l *ImportShareLogic) importTags(sourceUserID uint, sourceWordIDs, sourcePh
 	// 拆分: 系统 vs 用户
 	var systemTags, userTags []bean.Tag
 	for _, t := range srcTags {
-		if t.UserID == 0 {
+		if t.IsSystem {
 			systemTags = append(systemTags, t)
 		} else {
 			userTags = append(userTags, t)
