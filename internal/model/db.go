@@ -1,7 +1,6 @@
 package model
 
 import (
-	"english-study/internal/eventbus"
 	"english-study/internal/model/bean"
 	"english-study/internal/model/dto"
 
@@ -28,14 +27,9 @@ func NewModel(dsn string) (*Model, error) {
 	if err := userWordTableSync(db); err != nil {
 		return nil, err
 	}
-	// 启动时孤儿清理: 上次进程如果在 PublishAsync(tag.deleted) 后崩了, 这里兜底清掉 word_tags 残留
-	if err := eventbus.ReapOrphanWordTags(db); err != nil {
-		return nil, err
-	}
-	// 注册 eventbus 订阅者 (tag 删除级联清理等)
-	if err := eventbus.RegisterSubscribers(db); err != nil {
-		return nil, err
-	}
+	// 事件订阅与启动孤儿清理由应用启动层 (main.go) 调用 dictlogic.ReapOrphanWordTags
+	// 和 dictlogic.SubscribeTagEvents 完成 — model 包不参与应用生命周期管理,
+	// 否则会形成 model → logic → svc → model 循环.
 	return &Model{
 		DB:  db,
 		Gen: dto.Use(db),
