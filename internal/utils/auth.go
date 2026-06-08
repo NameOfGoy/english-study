@@ -95,6 +95,112 @@ func GenerateToken(secretKey string, iat, seconds int64, userID uint, username s
 	return token.SignedString([]byte(secretKey))
 }
 
+// RelayAudience 转发器 (cc 桥) 专用 JWT aud claim.
+// 加 aud 是为了防 english-study 业务 token 被滥用接入 forwarder ws —— 即便 secret 共享,
+// 业务 token 没 aud=forwarder, 转发器会 401 拒.
+const RelayAudience = "forwarder"
+
+// GenerateRelayToken 旧接口, 保留兼容; 新代码请用 GenerateRelayAccessToken.
+// 默认签发 access token (token_type=access), 不带 jti, 不可 rotation.
+func GenerateRelayToken(secretKey string, iat, ttlSec int64, userID uint, username string, role int) (string, error) {
+	return GenerateRelayAccessToken(secretKey, iat, ttlSec, userID, username, role, "")
+}
+
+// Token 类型常量, 写进 JWT claim "token_type", 转发器 + 后端 /relay-refresh 据此区分接受范围.
+const (
+	RelayTokenTypeAccess  = "access"
+	RelayTokenTypeRefresh = "refresh"
+)
+
+// GenerateRelayAccessToken 签发短 TTL access token. 用于 ws 鉴权.
+//   jti: 可空; 非空时写入 claim, 配合 refresh rotation 关联两条 token 寿命
+func GenerateRelayAccessToken(secretKey string, iat, ttlSec int64, userID uint, username string, role int, jti string) (string, error) {
+	claims := jwt.MapClaims{
+		"exp":        iat + ttlSec,
+		"iat":        iat,
+		"user_id":    userID,
+		"username":   username,
+		"role":       role,
+		"aud":        RelayAudience,
+		"token_type": RelayTokenTypeAccess,
+	}
+	if jti != "" {
+		claims["jti"] = jti
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(secretKey))
+}
+
+// GenerateRelayRefreshToken 签发长 TTL refresh token. 仅 /api/v1/cc/relay-refresh 接受;
+// 转发器 ws 显式拒绝 token_type=refresh, 防止 refresh 被当 access 用.
+//   jti 必填: 唯一标识本条 refresh, /relay-refresh 用它做 rotation 后撤旧
+func GenerateRelayRefreshToken(secretKey string, iat, ttlSec int64, userID uint, username string, role int, jti string) (string, error) {
+	if jti == "" {
+		return "", fmt.Errorf("refresh token must have jti for rotation tracking")
+	}
+	claims := jwt.MapClaims{
+		"exp":        iat + ttlSec,
+		"iat":        iat,
+		"user_id":    userID,
+		"username":   username,
+		"role":       role,
+		"aud":        RelayAudience,
+		"token_type": RelayTokenTypeRefresh,
+		"jti":        jti,
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(secretKey))
+}
+
+// ===== AI 桥文件下载签名 token =====
+//
+// 私有桶 cc-uploads 不可匿名读. CC(本地) 要下载文件, 既不该拿业务 JWT(隐式耦合),
+// 也连不到内网 MinIO 做原生 presigned. 方案: 后端用同一 HS256 secret 签一个短时效
+// token (内含 bucket|object + exp), CC 凭 token 走 GET /api/v1/cc/download 流式下载 —
+// 等价于"应用层 presigned": 自鉴权 + 带 TTL + 不暴露 MinIO.
+
+const RelayFileAudience = "cc-file"
+
+// GenerateFileToken 为 (bucket, object) 签一个下载 token. ttlSec 后过期.
+func GenerateFileToken(secretKey, bucket, object string, iat, ttlSec int64) (string, error) {
+	claims := jwt.MapClaims{
+		"exp": iat + ttlSec,
+		"iat": iat,
+		"aud": RelayFileAudience,
+		// 用 "|" 分隔 bucket 与 object: object 自身含 "/", 用 "|" 不歧义
+		"obj": bucket + "|" + object,
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(secretKey))
+}
+
+// VerifyFileToken 校验下载 token, 返回 (bucket, object). 校验签名 + 过期 + aud=cc-file.
+func VerifyFileToken(secretKey, token string) (bucket, object string, err error) {
+	var claims jwt.MapClaims
+	t, err := jwt.ParseWithClaims(token, &claims, func(t *jwt.Token) (any, error) {
+		if t.Method.Alg() != jwt.SigningMethodHS256.Alg() {
+			return nil, fmt.Errorf("unexpected alg: %v", t.Method.Alg())
+		}
+		return []byte(secretKey), nil
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
+	if err != nil {
+		return "", "", err
+	}
+	if !t.Valid {
+		return "", "", fmt.Errorf("file token invalid")
+	}
+	if aud, _ := claims["aud"].(string); aud != RelayFileAudience {
+		// 防止把业务 token / relay token 拿来当下载 token 用
+		return "", "", fmt.Errorf("file token aud mismatch")
+	}
+	obj, _ := claims["obj"].(string)
+	parts := strings.SplitN(obj, "|", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return "", "", fmt.Errorf("file token obj malformed")
+	}
+	return parts[0], parts[1], nil
+}
+
 // 角色常量 (重复于 bean.User 是为了避免循环依赖)
 const (
 	RoleNormal = 0

@@ -155,3 +155,80 @@ func TestGetUserInfoFromCtx_MissingUserIDFails(t *testing.T) {
 		t.Error("expected err for missing user_id, got nil")
 	}
 }
+
+func TestGenerateRelayToken_HasForwarderAudAndRole(t *testing.T) {
+	iat := time.Now().Unix()
+	tok, err := GenerateRelayToken(testSecret, iat, 900, 7, "alice", RoleAdmin)
+	if err != nil {
+		t.Fatalf("GenerateRelayToken: %v", err)
+	}
+	parsed, err := jwt.Parse(tok, func(t *jwt.Token) (any, error) { return []byte(testSecret), nil })
+	if err != nil {
+		t.Fatalf("Parse: %v", err)
+	}
+	claims, ok := parsed.Claims.(jwt.MapClaims)
+	if !ok {
+		t.Fatalf("claims type %T", parsed.Claims)
+	}
+	// aud 在 jwt/v5 里可能是 string 也可能是 []interface{}
+	switch v := claims["aud"].(type) {
+	case string:
+		if v != RelayAudience {
+			t.Errorf("aud got %q want %q", v, RelayAudience)
+		}
+	case []any:
+		found := false
+		for _, a := range v {
+			if s, _ := a.(string); s == RelayAudience {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("aud %v missing %q", v, RelayAudience)
+		}
+	default:
+		t.Errorf("unexpected aud type %T", claims["aud"])
+	}
+	if r, _ := claims["role"].(float64); int(r) != RoleAdmin {
+		t.Errorf("role got %v want %d", claims["role"], RoleAdmin)
+	}
+}
+
+func TestFileToken_RoundTrip(t *testing.T) {
+	iat := time.Now().Unix()
+	tok, err := GenerateFileToken(testSecret, "cc-uploads", "cc/0/abc/words.xlsx", iat, 3600)
+	if err != nil {
+		t.Fatalf("GenerateFileToken: %v", err)
+	}
+	bucket, object, err := VerifyFileToken(testSecret, tok)
+	if err != nil {
+		t.Fatalf("VerifyFileToken: %v", err)
+	}
+	if bucket != "cc-uploads" || object != "cc/0/abc/words.xlsx" {
+		t.Errorf("got bucket=%q object=%q", bucket, object)
+	}
+}
+
+func TestFileToken_RejectsExpired(t *testing.T) {
+	iat := time.Now().Unix() - 7200
+	tok, _ := GenerateFileToken(testSecret, "cc-uploads", "x/y.txt", iat, 3600) // 1h TTL, 已过期 1h
+	if _, _, err := VerifyFileToken(testSecret, tok); err == nil {
+		t.Error("expected expired token to be rejected")
+	}
+}
+
+func TestFileToken_RejectsWrongSecret(t *testing.T) {
+	tok, _ := GenerateFileToken(testSecret, "cc-uploads", "x/y.txt", time.Now().Unix(), 3600)
+	if _, _, err := VerifyFileToken("wrong-secret", tok); err == nil {
+		t.Error("expected wrong-secret token to be rejected")
+	}
+}
+
+func TestFileToken_RejectsRelayTokenAsFileToken(t *testing.T) {
+	// relay access token (aud=forwarder) 不能拿来当文件下载 token (aud=cc-file) 用
+	relay, _ := GenerateRelayAccessToken(testSecret, time.Now().Unix(), 3600, 0, "admin", RoleAdmin, "")
+	if _, _, err := VerifyFileToken(testSecret, relay); err == nil {
+		t.Error("expected relay token to be rejected as file token (aud mismatch)")
+	}
+}

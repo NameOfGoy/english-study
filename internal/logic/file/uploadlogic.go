@@ -6,6 +6,7 @@ import (
 	"english-study/internal/utils"
 	"mime/multipart"
 	"net/http"
+	"strings"
 
 	"english-study/internal/svc"
 	"english-study/internal/types"
@@ -59,7 +60,13 @@ func (l *UploadLogic) Upload(req *types.FileUploadReq, file multipart.File, file
 	sniff := make([]byte, 512)
 	n, _ := file.Read(sniff)
 	detected := http.DetectContentType(sniff[:n])
-	if !allowedUploadMIMETypes[detected] {
+	allowed := allowedUploadMIMETypes[detected]
+	// xlsx 是 zip 容器, DetectContentType 只能看出 application/zip, 看不出是 xlsx;
+	// 用扩展名兜底放行 (词单导入核心场景), 否则 xlsx 必被拒.
+	if !allowed && detected == "application/zip" && strings.HasSuffix(strings.ToLower(fileHeader.Filename), ".xlsx") {
+		allowed = true
+	}
+	if !allowed {
 		return nil, errors.ErrorRequestParamError("不支持的文件类型: " + detected)
 	}
 	// 关键: 重置 reader 到开头, 否则后面 Upload 写入会少前 512 字节

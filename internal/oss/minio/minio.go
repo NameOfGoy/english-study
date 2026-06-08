@@ -4,6 +4,7 @@ import (
 	"context"
 	"english-study/internal/oss"
 	"english-study/internal/utils"
+	"fmt"
 	"io"
 	"mime"
 	"path/filepath"
@@ -34,10 +35,13 @@ func (m *Minio) Upload(ctx context.Context, bucket string, object string, data i
 			ContentType: "application/octet-stream",
 		}
 	})
-	// 检查bucket是否存在
-	_, err := m.client.BucketExists(ctx, bucket)
+	// 检查bucket是否存在 (BucketExists 返回 (bool,err); 之前丢了 bool 导致桶不存在时不报错绕一圈)
+	exists, err := m.client.BucketExists(ctx, bucket)
 	if err != nil {
 		return "", err
+	}
+	if !exists {
+		return "", fmt.Errorf("bucket %q does not exist", bucket)
 	}
 
 	var contentType string
@@ -59,6 +63,27 @@ func (m *Minio) Upload(ctx context.Context, bucket string, object string, data i
 		return "", err
 	}
 	return object, nil
+}
+
+// EnsureBucket 确保 bucket 存在; 不存在则创建. 新建 bucket 默认私有 (MinIO 默认无匿名访问策略),
+// 不调用 SetBucketPolicy, 所以匿名 GET 会被拒 —— 这正是 AI 桥私有桶想要的.
+func (m *Minio) EnsureBucket(ctx context.Context, bucket string) error {
+	exists, err := m.client.BucketExists(ctx, bucket)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+	if err := m.client.MakeBucket(ctx, bucket, minio.MakeBucketOptions{}); err != nil {
+		// 并发首次创建: 另一个请求已建好同名桶, 忽略这种竞态错误
+		code := minio.ToErrorResponse(err).Code
+		if code == "BucketAlreadyOwnedByYou" || code == "BucketAlreadyExists" {
+			return nil
+		}
+		return err
+	}
+	return nil
 }
 
 func (m *Minio) Download(ctx context.Context, bucket string, object string) (io.ReadCloser, error) {

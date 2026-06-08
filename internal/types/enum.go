@@ -2,6 +2,10 @@ package types
 
 const (
 	OssBucket = "englishstudy"
+	// CCUploadBucket AI 桥(/admin/chat 文件上传)专用私有桶.
+	// 跟公开读的 OssBucket 隔离: 该桶不设匿名公开读策略, 经 nginx /api/v1/file/ 匿名 GET 会被 MinIO 拒(403),
+	// 只有后端(带凭据)能读 → 配合签名下载 token (GenerateFileToken) 实现"私有 + 临时链接"语义.
+	CCUploadBucket = "cc-uploads"
 )
 
 const (

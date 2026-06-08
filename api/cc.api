@@ -1,0 +1,33 @@
+syntax = "v1"
+
+@server (
+	group:  cc
+	jwt:    Auth
+	prefix: api/v1/cc
+)
+service englishstudy-api {
+	@doc "CC AI 桥/输 AccessKey 登录, 签发 access + refresh token (仅 admin)"
+	@handler RelayLogin
+	post /relay-login (RelayLoginReq) returns (RelayLoginResp)
+
+	@doc "CC AI 桥/用 refresh token 换新 access + 新 refresh (rotation: 旧 refresh 同步作废)"
+	@handler RelayRefresh
+	post /relay-refresh (RelayRefreshReq) returns (RelayLoginResp)
+}
+
+type RelayLoginReq {
+	AccessKey string `json:"access_key"` // 等同于"AI 辅助密钥", 后端跟 CC.AccessKey 比对
+}
+
+type RelayRefreshReq {
+	RefreshToken string `json:"refresh_token"`
+}
+
+type RelayLoginResp {
+	CommonReply
+	AccessToken       string `json:"access_token"`        // 短 TTL JWT (aud=forwarder, token_type=access); 前端连 ws 时放 Sec-WebSocket-Protocol: bearer.<token>
+	RefreshToken      string `json:"refresh_token"`       // 长 TTL JWT (aud=forwarder, token_type=refresh); 仅可调 /relay-refresh
+	AccessExpiresAt   int64  `json:"access_expires_at"`   // unix sec, 前端 < 60s 内剩余应自动 silent refresh
+	RefreshExpiresAt  int64  `json:"refresh_expires_at"`  // unix sec, refresh 过期 → 前端弹回 AccessKey 输入框
+	WsURL             string `json:"ws_url"`              // wss://your-domain/forwarder/ws
+}
