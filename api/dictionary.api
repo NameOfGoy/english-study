@@ -423,6 +423,10 @@ service englishstudy-api {
 	@doc "字典模块/修改单词标签"
 	@handler UpdateWordTag
 	post /update (UpdateWordTagReq) returns (UpdateWordTagResp)
+
+	@doc "字典模块/按标签筛选词语(AND: 同时拥有全部所选标签)"
+	@handler ListWordsByTags
+	get /words (ListWordsByTagsReq) returns (ListWordsByTagsResp)
 }
 
 type WordTag {
@@ -454,6 +458,28 @@ type UpdateWordTagReq {
 
 type UpdateWordTagResp {
 	CommonReply
+}
+
+type SimpleTagInfo {
+	ID    uint   `json:"id"` // 标签ID
+	Name  string `json:"name"` // 标签名称
+	Style string `json:"style"` // 展示风格
+}
+
+type TaggedWord {
+	ID   uint             `json:"id"` // 词条ID
+	Word string           `json:"word"` // 单词/短语文本
+	Tags []*SimpleTagInfo `json:"tags"` // 该词条的全部标签
+}
+
+type ListWordsByTagsReq {
+	TagIDs   []uint `form:"tag_ids"` // 标签ID列表; 返回"同时拥有全部这些标签"的词语(AND)
+	WordType int    `form:"word_type"` // 1-单词 2-短语
+}
+
+type ListWordsByTagsResp {
+	CommonReply
+	Data []*TaggedWord `json:"data"`
 }
 
 @server (
