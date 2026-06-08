@@ -12,8 +12,10 @@ import "fileservice.api"
 import "dictionary.api"
 import "tag.api"
 import "practise.api"
+import "article.api"
 import "dashboard.api"
 import "share.api"
+import "cc.api"
 
 type (
 	PathIDReq {

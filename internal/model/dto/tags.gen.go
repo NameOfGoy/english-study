@@ -30,6 +30,7 @@ func newTag(db *gorm.DB, opts ...gen.DOOption) tag {
 	_tag.Tag = field.NewString(tableName, "tag")
 	_tag.Style = field.NewString(tableName, "style")
 	_tag.UserID = field.NewUint(tableName, "user_id")
+	_tag.IsSystem = field.NewBool(tableName, "is_system")
 
 	_tag.fillFieldMap()
 
@@ -39,11 +40,12 @@ func newTag(db *gorm.DB, opts ...gen.DOOption) tag {
 type tag struct {
 	tagDo
 
-	ALL    field.Asterisk
-	ID     field.Uint
-	Tag    field.String
-	Style  field.String
-	UserID field.Uint
+	ALL      field.Asterisk
+	ID       field.Uint
+	Tag      field.String
+	Style    field.String
+	UserID   field.Uint
+	IsSystem field.Bool
 
 	fieldMap map[string]field.Expr
 }
@@ -64,6 +66,7 @@ func (t *tag) updateTableName(table string) *tag {
 	t.Tag = field.NewString(table, "tag")
 	t.Style = field.NewString(table, "style")
 	t.UserID = field.NewUint(table, "user_id")
+	t.IsSystem = field.NewBool(table, "is_system")
 
 	t.fillFieldMap()
 
@@ -80,11 +83,12 @@ func (t *tag) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (t *tag) fillFieldMap() {
-	t.fieldMap = make(map[string]field.Expr, 4)
+	t.fieldMap = make(map[string]field.Expr, 5)
 	t.fieldMap["id"] = t.ID
 	t.fieldMap["tag"] = t.Tag
 	t.fieldMap["style"] = t.Style
 	t.fieldMap["user_id"] = t.UserID
+	t.fieldMap["is_system"] = t.IsSystem
 }
 
 func (t tag) clone(db *gorm.DB) tag {

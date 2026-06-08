@@ -7,6 +7,7 @@ import (
 	"english-study/internal/utils"
 	e "errors"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 
 	"english-study/internal/svc"
@@ -55,6 +56,7 @@ func (l *RegisterLogic) Register(req *types.UserRegisterReq) (resp *types.UserRe
 	}
 	user := &bean.User{
 		Account:  req.Account,
+		WxOpenID: "non-wx:" + uuid.New().String(), // non-WeChat accounts need a unique placeholder
 		Password: hashedPwd,
 		Username: req.Name,
 		Phone:    req.Phone,

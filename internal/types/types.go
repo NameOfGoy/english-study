@@ -14,7 +14,7 @@ type AddTagResp struct {
 }
 
 type AddWordPhraseReq struct {
-	Phrase            string     `json:"phrase"`                        // 短语
+	Phrase            string     `json:"phrase"`                       // 短语
 	Translation       string     `json:"translation,optional"`         // 中文翻译
 	Pronunciation     string     `json:"pronunciation,optional"`       // 发音
 	Example           []*Example `json:"example,optional"`             // 例句
@@ -27,7 +27,7 @@ type AddWordPhraseResp struct {
 }
 
 type AddWordReq struct {
-	Word              string     `json:"word"`                          // 单词
+	Word              string     `json:"word"`                         // 单词
 	UKPhonetic        string     `json:"uk_phonetic,optional"`         // 英式音标
 	UKAudio           string     `json:"uk_audio,optional"`            // 英式音频
 	USPhonetic        string     `json:"us_phonetic,optional"`         // 美式音标
@@ -38,6 +38,82 @@ type AddWordReq struct {
 
 type AddWordResp struct {
 	CommonReply
+}
+
+type ArticleCandidate struct {
+	WordID   uint   `json:"word_id"`
+	WordType int    `json:"word_type"`
+	Word     string `json:"word"`
+	PosLabel string `json:"pos_label"`
+	Meaning  string `json:"meaning"`
+	Phonetic string `json:"phonetic"`
+}
+
+type ArticleCandidatesReq struct {
+	Status   int    `form:"status,optional"`   // 0-全部 1-4
+	Category int    `form:"category,optional"` // 1-标签 2-单词 3-词语 4-全部
+	TagIDs   []uint `form:"tag_ids,optional"`
+}
+
+type ArticleCandidatesResp struct {
+	CommonReply
+	Data []*ArticleCandidate `json:"data"`
+}
+
+type ArticleDetailReq struct {
+	ID uint `form:"id"`
+}
+
+type ArticleDetailResp struct {
+	CommonReply
+	Data ArticleView `json:"data"`
+}
+
+type ArticleListItem struct {
+	ID        uint         `json:"id"`
+	TitleEn   string       `json:"title_en"`
+	TitleZh   string       `json:"title_zh"`
+	Tags      []ArticleTag `json:"tags"`
+	Words     []string     `json:"words"` // 含词原文(小字展示)
+	CreatedAt string       `json:"created_at"`
+}
+
+type ArticleSense struct {
+	PosLabel string `json:"pos_label"` // 词性缩写, 如 n. / vt. / vi.
+	Meaning  string `json:"meaning"`   // 该词性下的中文释义
+}
+
+type ArticleSentence struct {
+	En string `json:"en"` // 英文
+	Zh string `json:"zh"` // 中文
+}
+
+type ArticleTag struct {
+	TagID uint   `json:"tag_id"`
+	Name  string `json:"name"`
+	Style string `json:"style"`
+}
+
+type ArticleUsedWord struct {
+	WordID   uint           `json:"word_id"`   // 词条ID(收录时建 article_words 用)
+	WordType int            `json:"word_type"` // 1-单词 2-短语
+	Word     string         `json:"word"`      // 原型
+	Surfaces []string       `json:"surfaces"`  // 正文中出现的字面形式(含变形)
+	PosLabel string         `json:"pos_label"` // 主词性缩写(兼容; 气泡卡优先用 senses)
+	Meaning  string         `json:"meaning"`   // 合并释义(兼容)
+	Senses   []ArticleSense `json:"senses"`    // 全部词性+释义, 气泡卡按词性分行
+	Phonetic string         `json:"phonetic"`  // 音标(后端补齐)
+	Found    bool           `json:"found"`     // 词条当前是否仍存在于词库
+}
+
+type ArticleView struct {
+	ID        uint              `json:"id"` // 未收录时为 0
+	TitleEn   string            `json:"title_en"`
+	TitleZh   string            `json:"title_zh"`
+	Tags      []ArticleTag      `json:"tags"` // 计算得到
+	Sentences []ArticleSentence `json:"sentences"`
+	UsedWords []ArticleUsedWord `json:"used_words"`
+	CreatedAt string            `json:"created_at,optional"`
 }
 
 type BatchAddStardictItem struct {
@@ -185,6 +261,20 @@ type FinishStudyResp struct {
 	CommonReply
 }
 
+type GenerateArticleReq struct {
+	Method   int              `json:"method"`            // 1-随机 2-自选
+	Count    int              `json:"count,optional"`    // 随机词数 3~8
+	Status   int              `json:"status,optional"`   // 词状态 0-全部 1-学习 2-复习 3-强化 4-完成
+	Category int              `json:"category,optional"` // 类别 1-标签 2-单词 3-词语 4-全部
+	TagIDs   []uint           `json:"tag_ids,optional"`  // category=1 时生效
+	Words    []SelfSelectWord `json:"words,optional"`    // method=2 自选时的词条
+}
+
+type GenerateArticleResp struct {
+	CommonReply
+	Data ArticleView `json:"data"` // ID=0, 未持久化
+}
+
 type GenerateExampleReq struct {
 	WordPosId   uint   `json:"word_pos_id"` // 单词词性ID
 	Translation string `json:"translation"` // 指定某中文翻译
@@ -196,7 +286,7 @@ type GenerateExampleResp struct {
 }
 
 type GeneratePhraseExampleReq struct {
-	ID          uint   `json:"id"`                    // 短语ID
+	ID          uint   `json:"id"`                   // 短语ID
 	Translation string `json:"translation,optional"` // 指定某中文翻译
 }
 
@@ -299,10 +389,10 @@ type GetUserInfoResp struct {
 }
 
 type GetWordCardListReq struct {
-	Count    int    `form:"count,default=10"`    // 单词数量
-	Random   bool   `form:"random"`              // 是否随机
-	WordType int    `form:"word_type,optional"`  // 单词类型 0-都行 1-单词 2-短语
-	TagIDs   []uint `form:"tag_ids,optional"`    // 全局标签筛选: 只取打了任一标签的词; 空=不筛选
+	Count    int    `form:"count,default=10"`   // 单词数量
+	Random   bool   `form:"random"`             // 是否随机
+	WordType int    `form:"word_type,optional"` // 单词类型 0-都行 1-单词 2-短语
+	TagIDs   []uint `form:"tag_ids,optional"`   // 全局标签筛选: 只取打了任一标签的词; 空=不筛选
 }
 
 type GetWordCardListResp struct {
@@ -423,6 +513,28 @@ type ImportWordResp struct {
 	TaskId uint `json:"task_id"` // 任务ID
 }
 
+type ListArticleReq struct {
+	PageReq
+	Keyword string `form:"keyword,optional"` // 标题(中英)+含词(英文) 共用
+	TagIDs  []uint `form:"tag_ids,optional"` // 标签多选
+}
+
+type ListArticleResp struct {
+	CommonReply
+	PageReply
+	Data []*ArticleListItem `json:"data"`
+}
+
+type ListWordsByTagsReq struct {
+	TagIDs   []uint `form:"tag_ids"`   // 标签ID列表; 返回"同时拥有全部这些标签"的词语(AND)
+	WordType int    `form:"word_type"` // 1-单词 2-短语
+}
+
+type ListWordsByTagsResp struct {
+	CommonReply
+	Data []*TaggedWord `json:"data"`
+}
+
 type PageReply struct {
 	Offset     int   `json:"offset,optional"`
 	Limit      int   `json:"limit,optional"`
@@ -454,6 +566,35 @@ type PreviewShareResp struct {
 	ExpiresAt    int64             `json:"expires_at"`    // 过期时间
 }
 
+type RelayLoginReq struct {
+	AccessKey string `json:"access_key"` // 等同于"AI 辅助密钥", 后端跟 CC.AccessKey 比对
+}
+
+type RelayLoginResp struct {
+	CommonReply
+	AccessToken      string `json:"access_token"`       // 短 TTL JWT (aud=forwarder, token_type=access); 前端连 ws 时放 Sec-WebSocket-Protocol: bearer.<token>
+	RefreshToken     string `json:"refresh_token"`      // 长 TTL JWT (aud=forwarder, token_type=refresh); 仅可调 /relay-refresh
+	AccessExpiresAt  int64  `json:"access_expires_at"`  // unix sec, 前端 < 60s 内剩余应自动 silent refresh
+	RefreshExpiresAt int64  `json:"refresh_expires_at"` // unix sec, refresh 过期 → 前端弹回 AccessKey 输入框
+	WsURL            string `json:"ws_url"`             // wss://your-domain/forwarder/ws
+}
+
+type RelayRefreshReq struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
+type SaveArticleReq struct {
+	TitleEn   string            `json:"title_en"`
+	TitleZh   string            `json:"title_zh"`
+	Sentences []ArticleSentence `json:"sentences"`
+	UsedWords []ArticleUsedWord `json:"used_words"` // 含 word_id/word_type/word/surfaces
+}
+
+type SaveArticleResp struct {
+	CommonReply
+	ID uint `json:"id"`
+}
+
 type SearchImagesReq struct {
 	Query  string `form:"query"`           // 搜索关键词
 	Offset int    `form:"offset,optional"` // 分页偏移, 默认0
@@ -475,6 +616,11 @@ type SearchStardictResp struct {
 	Data []StardictItem `json:"data"`
 }
 
+type SelfSelectWord struct {
+	WordID   uint `json:"word_id"`
+	WordType int  `json:"word_type"` // 1-单词 2-短语
+}
+
 type SharePreviewTag struct {
 	Name  string `json:"name"`
 	Style string `json:"style"`
@@ -486,6 +632,12 @@ type ShareWordItem struct {
 	Text        string   `json:"text"`        // 单词或短语
 	Translation string   `json:"translation"` // 中文翻译（简版）
 	TagNames    []string `json:"tag_names"`   // 该词关联的标签名
+}
+
+type SimpleTagInfo struct {
+	ID    uint   `json:"id"`    // 标签ID
+	Name  string `json:"name"`  // 标签名称
+	Style string `json:"style"` // 展示风格
 }
 
 type SimpleWord struct {
@@ -505,7 +657,13 @@ type Tag struct {
 	ID       uint   `json:"id"`
 	Name     string `json:"name"`
 	Style    string `json:"style"`
-	IsSystem bool   `json:"is_system"` // 是否系统标签 (user_id=0)
+	IsSystem bool   `json:"is_system"` // 是否系统标签 (is_system=true, 对所有用户可见)
+}
+
+type TaggedWord struct {
+	ID   uint             `json:"id"`   // 词条ID
+	Word string           `json:"word"` // 单词/短语文本
+	Tags []*SimpleTagInfo `json:"tags"` // 该词条的全部标签
 }
 
 type TranslationItem struct {
@@ -675,9 +833,9 @@ type UserRegisterResp struct {
 }
 
 type UserRegisterWxReq struct {
-	Code   string `json:"code"`   // 微信登录code，服务端会用它去 Code2Session 拿真实 openid（禁止客户端直接传 openid）
-	Name   string `json:"name"`   // 用户名
-	Avatar string `json:"avatar"` // 头像
+	OpenId string `json:"open_id"` // 微信openid
+	Name   string `json:"name"`    // 用户名
+	Avatar string `json:"avatar"`  // 头像
 }
 
 type UserRegisterWxResp struct {
@@ -694,6 +852,16 @@ type Word struct {
 	USPhonetic string     `json:"us_phonetic"` // 美式音标
 	USAudio    string     `json:"us_audio"`    // 美式音频
 	Pos        []*WordPos `json:"pos"`         // 词性
+}
+
+type WordBriefItem struct {
+	Word     string         `json:"word"`
+	Type     int            `json:"type"`
+	PosLabel string         `json:"pos_label"`
+	Meaning  string         `json:"meaning"`
+	Senses   []ArticleSense `json:"senses"`
+	Phonetic string         `json:"phonetic"`
+	Found    bool           `json:"found"`
 }
 
 type WordCard struct {
@@ -722,7 +890,7 @@ type WordPhrase struct {
 
 type WordPos struct {
 	ID          uint              `json:"id,optional"`          // 自定义的词性, id 从100W开始
-	WordID      uint              `json:"word_id"`               // 单词ID
+	WordID      uint              `json:"word_id"`              // 单词ID
 	Word        string            `json:"word,optional"`        // 单词
 	Pos         int               `json:"pos,optional"`         // 词性
 	Translation string            `json:"translation,optional"` // 中文翻译
@@ -747,4 +915,18 @@ type WordTag struct {
 	TagID    uint   `json:"tag_id"`    // 标签ID
 	Name     string `json:"name"`      // 标签名称
 	Style    string `json:"style"`     // 展示风格
+}
+
+type WordTextItem struct {
+	Word string `json:"word"`
+	Type int    `json:"type"` // 1-单词 2-短语
+}
+
+type WordsInfoReq struct {
+	Words []WordTextItem `json:"words"`
+}
+
+type WordsInfoResp struct {
+	CommonReply
+	Data []*WordBriefItem `json:"data"`
 }

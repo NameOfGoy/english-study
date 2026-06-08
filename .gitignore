@@ -13,5 +13,14 @@ etc/*.yml
 # 前端独立仓库
 English-Study-UI/
 
-# Claude superpowers 工作文件
-docs/superpowers/
+# 文档不进 git 管理 (含 superpowers 工作文件、架构/迁移/设计文档)
+docs/
+
+# AI 桥转发器 (云端独立服务, 不进主项目 git, 物理隔离单独维护)
+forwarder/
+
+# AI 桥处理用户上传文件的临时目录 (CC 下载/解析用, 任务完即清, 不进 git)
+.cc_tmp/
+
+# 标签归类分析临时产物 (报告/导出/SQL, 一次性分析用, 不进 git)
+tmp_tagging/

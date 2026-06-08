@@ -17,47 +17,53 @@ import (
 
 func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 	return &Query{
-		db:         db,
-		ImportTask: newImportTask(db, opts...),
-		StarDict:   newStarDict(db, opts...),
-		Tag:        newTag(db, opts...),
-		User:       newUser(db, opts...),
-		Word:       newWord(db, opts...),
-		WordPhrase: newWordPhrase(db, opts...),
-		WordPos:    newWordPos(db, opts...),
-		WordStatus: newWordStatus(db, opts...),
-		WordTag:    newWordTag(db, opts...),
+		db:          db,
+		Article:     newArticle(db, opts...),
+		ArticleWord: newArticleWord(db, opts...),
+		ImportTask:  newImportTask(db, opts...),
+		StarDict:    newStarDict(db, opts...),
+		Tag:         newTag(db, opts...),
+		User:        newUser(db, opts...),
+		Word:        newWord(db, opts...),
+		WordPhrase:  newWordPhrase(db, opts...),
+		WordPos:     newWordPos(db, opts...),
+		WordStatus:  newWordStatus(db, opts...),
+		WordTag:     newWordTag(db, opts...),
 	}
 }
 
 type Query struct {
 	db *gorm.DB
 
-	ImportTask importTask
-	StarDict   starDict
-	Tag        tag
-	User       user
-	Word       word
-	WordPhrase wordPhrase
-	WordPos    wordPos
-	WordStatus wordStatus
-	WordTag    wordTag
+	Article     article
+	ArticleWord articleWord
+	ImportTask  importTask
+	StarDict    starDict
+	Tag         tag
+	User        user
+	Word        word
+	WordPhrase  wordPhrase
+	WordPos     wordPos
+	WordStatus  wordStatus
+	WordTag     wordTag
 }
 
 func (q *Query) Available() bool { return q.db != nil }
 
 func (q *Query) clone(db *gorm.DB) *Query {
 	return &Query{
-		db:         db,
-		ImportTask: q.ImportTask.clone(db),
-		StarDict:   q.StarDict.clone(db),
-		Tag:        q.Tag.clone(db),
-		User:       q.User.clone(db),
-		Word:       q.Word.clone(db),
-		WordPhrase: q.WordPhrase.clone(db),
-		WordPos:    q.WordPos.clone(db),
-		WordStatus: q.WordStatus.clone(db),
-		WordTag:    q.WordTag.clone(db),
+		db:          db,
+		Article:     q.Article.clone(db),
+		ArticleWord: q.ArticleWord.clone(db),
+		ImportTask:  q.ImportTask.clone(db),
+		StarDict:    q.StarDict.clone(db),
+		Tag:         q.Tag.clone(db),
+		User:        q.User.clone(db),
+		Word:        q.Word.clone(db),
+		WordPhrase:  q.WordPhrase.clone(db),
+		WordPos:     q.WordPos.clone(db),
+		WordStatus:  q.WordStatus.clone(db),
+		WordTag:     q.WordTag.clone(db),
 	}
 }
 
@@ -71,42 +77,48 @@ func (q *Query) WriteDB() *Query {
 
 func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 	return &Query{
-		db:         db,
-		ImportTask: q.ImportTask.replaceDB(db),
-		StarDict:   q.StarDict.replaceDB(db),
-		Tag:        q.Tag.replaceDB(db),
-		User:       q.User.replaceDB(db),
-		Word:       q.Word.replaceDB(db),
-		WordPhrase: q.WordPhrase.replaceDB(db),
-		WordPos:    q.WordPos.replaceDB(db),
-		WordStatus: q.WordStatus.replaceDB(db),
-		WordTag:    q.WordTag.replaceDB(db),
+		db:          db,
+		Article:     q.Article.replaceDB(db),
+		ArticleWord: q.ArticleWord.replaceDB(db),
+		ImportTask:  q.ImportTask.replaceDB(db),
+		StarDict:    q.StarDict.replaceDB(db),
+		Tag:         q.Tag.replaceDB(db),
+		User:        q.User.replaceDB(db),
+		Word:        q.Word.replaceDB(db),
+		WordPhrase:  q.WordPhrase.replaceDB(db),
+		WordPos:     q.WordPos.replaceDB(db),
+		WordStatus:  q.WordStatus.replaceDB(db),
+		WordTag:     q.WordTag.replaceDB(db),
 	}
 }
 
 type queryCtx struct {
-	ImportTask IImportTaskDo
-	StarDict   IStarDictDo
-	Tag        ITagDo
-	User       IUserDo
-	Word       IWordDo
-	WordPhrase IWordPhraseDo
-	WordPos    IWordPosDo
-	WordStatus IWordStatusDo
-	WordTag    IWordTagDo
+	Article     IArticleDo
+	ArticleWord IArticleWordDo
+	ImportTask  IImportTaskDo
+	StarDict    IStarDictDo
+	Tag         ITagDo
+	User        IUserDo
+	Word        IWordDo
+	WordPhrase  IWordPhraseDo
+	WordPos     IWordPosDo
+	WordStatus  IWordStatusDo
+	WordTag     IWordTagDo
 }
 
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
-		ImportTask: q.ImportTask.WithContext(ctx),
-		StarDict:   q.StarDict.WithContext(ctx),
-		Tag:        q.Tag.WithContext(ctx),
-		User:       q.User.WithContext(ctx),
-		Word:       q.Word.WithContext(ctx),
-		WordPhrase: q.WordPhrase.WithContext(ctx),
-		WordPos:    q.WordPos.WithContext(ctx),
-		WordStatus: q.WordStatus.WithContext(ctx),
-		WordTag:    q.WordTag.WithContext(ctx),
+		Article:     q.Article.WithContext(ctx),
+		ArticleWord: q.ArticleWord.WithContext(ctx),
+		ImportTask:  q.ImportTask.WithContext(ctx),
+		StarDict:    q.StarDict.WithContext(ctx),
+		Tag:         q.Tag.WithContext(ctx),
+		User:        q.User.WithContext(ctx),
+		Word:        q.Word.WithContext(ctx),
+		WordPhrase:  q.WordPhrase.WithContext(ctx),
+		WordPos:     q.WordPos.WithContext(ctx),
+		WordStatus:  q.WordStatus.WithContext(ctx),
+		WordTag:     q.WordTag.WithContext(ctx),
 	}
 }
 

@@ -5,7 +5,10 @@ package handler
 
 import (
 	"net/http"
+	"time"
 
+	article "english-study/internal/handler/article"
+	cc "english-study/internal/handler/cc"
 	dashboard "english-study/internal/handler/dashboard"
 	dictionary "english-study/internal/handler/dictionary"
 	file "english-study/internal/handler/file"
@@ -19,6 +22,76 @@ import (
 )
 
 func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				// 文章练习/即时生成(同步)
+				Method:  http.MethodPost,
+				Path:    "/generate",
+				Handler: article.GenerateArticleHandler(serverCtx),
+			},
+		},
+		rest.WithJwt(serverCtx.Config.Auth.AccessSecret),
+		rest.WithPrefix("/api/v1/practise/article"),
+		rest.WithTimeout(60000*time.Millisecond),
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				// 文章练习/自选候选词
+				Method:  http.MethodGet,
+				Path:    "/candidates",
+				Handler: article.ArticleCandidatesHandler(serverCtx),
+			},
+			{
+				// 文章练习/详情
+				Method:  http.MethodGet,
+				Path:    "/detail",
+				Handler: article.ArticleDetailHandler(serverCtx),
+			},
+			{
+				// 文章练习/收录列表
+				Method:  http.MethodGet,
+				Path:    "/list",
+				Handler: article.ListArticleHandler(serverCtx),
+			},
+			{
+				// 文章练习/收录
+				Method:  http.MethodPost,
+				Path:    "/save",
+				Handler: article.SaveArticleHandler(serverCtx),
+			},
+			{
+				// 文章练习/词条简要批量
+				Method:  http.MethodPost,
+				Path:    "/words/info",
+				Handler: article.WordsInfoHandler(serverCtx),
+			},
+		},
+		rest.WithJwt(serverCtx.Config.Auth.AccessSecret),
+		rest.WithPrefix("/api/v1/practise/article"),
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				// CC AI 桥/输 AccessKey 登录, 签发 access + refresh token (仅 admin)
+				Method:  http.MethodPost,
+				Path:    "/relay-login",
+				Handler: cc.RelayLoginHandler(serverCtx),
+			},
+			{
+				// CC AI 桥/用 refresh token 换新 access + 新 refresh (rotation: 旧 refresh 同步作废)
+				Method:  http.MethodPost,
+				Path:    "/relay-refresh",
+				Handler: cc.RelayRefreshHandler(serverCtx),
+			},
+		},
+		rest.WithJwt(serverCtx.Config.Auth.AccessSecret),
+		rest.WithPrefix("/api/v1/cc"),
+	)
+
 	server.AddRoutes(
 		[]rest.Route{
 			{
@@ -204,6 +277,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodPost,
 				Path:    "/update",
 				Handler: dictionary.UpdateWordTagHandler(serverCtx),
+			},
+			{
+				// 字典模块/按标签筛选词语(AND: 同时拥有全部所选标签)
+				Method:  http.MethodGet,
+				Path:    "/words",
+				Handler: dictionary.ListWordsByTagsHandler(serverCtx),
 			},
 		},
 		rest.WithJwt(serverCtx.Config.Auth.AccessSecret),
