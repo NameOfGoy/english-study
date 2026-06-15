@@ -788,6 +788,18 @@ type UpdateWordTranslationResp struct {
 	CommonReply
 }
 
+type UserBindWxReq struct {
+	Code     string `json:"code"`     // 微信登录code
+	Account  string `json:"account"`  // 已有账号
+	Password string `json:"password"` // 密码
+}
+
+type UserBindWxResp struct {
+	CommonReply
+	Token    string   `json:"token"` // 访问令牌
+	UserInfo UserInfo `json:"data"`  // 用户信息
+}
+
 type UserInfo struct {
 	ID      uint   `json:"id"`
 	Name    string `json:"name"`
@@ -833,9 +845,7 @@ type UserRegisterResp struct {
 }
 
 type UserRegisterWxReq struct {
-	OpenId string `json:"open_id"` // 微信openid
-	Name   string `json:"name"`    // 用户名
-	Avatar string `json:"avatar"`  // 头像
+	Code string `json:"code"` // 微信登录code(服务端 code2session 换 openid 后自动注册)
 }
 
 type UserRegisterWxResp struct {

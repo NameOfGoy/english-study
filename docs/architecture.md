@@ -190,7 +190,7 @@ aiapplication/
   - `VerifyPassword` 兼容 PBKDF2 旧记录 (`<hex>:<salt>`) 与明文; 验证成功且非 bcrypt 时返回 `needUpgrade=true`, 登录 logic 自动 rehash 并 UPDATE
 - **MinIO 路径:** `picture/user_word_{uid}/{SafeKeyPart(word)}/{pos}_{ts}.png`, `pronounce/{SafeKeyPart(word)}/{accent}.mp3`; SafeKeyPart 剔除非 `[a-z0-9_-]` 字符防越权
 - **标签权限:** 系统标签 (`user_id=0`) 仅超管可改; 用户标签仅本人 (`canMutateTag` helper). 服务端鉴权一律读 JWT 解出的 role, 不信任请求体的任何 role 字段
-- **标签删除一致性:** `DeleteTagLogic` → 提交事务删 `tags` 行 → `eventbus.TagDeleted.PublishAsync` → 订阅者异步 `DELETE FROM word_tags WHERE tag_id=? [AND user_id=?]`; 启动时 `ReapOrphanWordTags` 兜底 (清掉指向已删 tag 的孤儿关联)
+- **标签删除一致性:** `DeleteTagLogic` → 提交事务删 `tags` 行 → `eventbus.Tag().Deleted().PublishAsync(...)` 链式发布 → 订阅者 (`internal/logic/dictionary/wordtag_subscriber.go`, 与 word_tag 其他 logic 同包) 异步 `DELETE FROM word_tags WHERE tag_id=? [AND user_id=?]`; 启动时 main 函数调用 `dictlogic.ReapOrphanWordTags` 兜底 (清掉指向已删 tag 的孤儿关联). `internal/eventbus` 只放 DSL + 生成的 typed 通道, 不写业务订阅 handler — 订阅器与该数据所属业务包同处, 挂载点在 main 而非 model 包 (避免 model→logic→svc→model 循环)
 - **分享导入:** HMAC-SHA256 全 32 字节签名 + uint64 nonce, 5 分钟 TTL; 导入模式 0/1/2 分别对应 不带 / 仅系统 / 全部 (用户级走字符串匹配, 缺则新建; 系统级 tag_id 全局共享, 直接复用)
 - **练习全局筛选:** 4 个 list 接 `tag_ids` 后 → 反向 SELECT word_tags 拿 (word_id, word_type) → IN 限制主查询; 索引 `(user_id, tag_id) INCLUDE (word_id, word_type)`
 - **资源 cascade 删除:** DeleteWord/DeleteWordPhrase 单事务清: 用户表行 + 词性行 + word_statuses + word_tags
@@ -261,9 +261,14 @@ Docker + Nginx, dev代理 `/api` → `localhost:8888`
 **特点:**
 - 轻量 in-process 总线, 封装 `asaskevich/EventBus`
 - 提供 `TypedEvent[T]` 泛型, 既能手写也能通过 `eventbus-gen` CLI 从 DSL 生成 (含 metadata: source/trace_id/timestamp)
-- 业务事件定义在 `internal/eventbus/payload.go`, 订阅者注册在 `internal/eventbus/subscriber.go`
+
+**包职责划分 (对齐 iep / ess-ops-srv 的规约):**
+- `internal/eventbus/dsl.go` — 用 `EventsDSL() []generator.ResourceDef` 声明全部资源 + 操作 + payload struct
+- `internal/eventbus/events.go` + `typed.go` — 由 `eventbus-gen -dsl=internal/eventbus/dsl.go` 生成, 提供 `eventbus.Tag().Deleted()` 链式 DSL, **不要手改**
+- 业务订阅 handler **不**放在 eventbus 包里, 由依赖该资源的业务模块**与该数据所属同包**实现 (例如 `internal/logic/dictionary/wordtag_subscriber.go` 与 getwordtaglistlogic 等同处 dictionary 包). 依赖方向永远 subscriber → eventbus, 避免反向 import
+- **挂载点在 main**: 应用启动时 `englishstudy.go` 显式调用 `dictlogic.ReapOrphanWordTags(m.DB)` + `dictlogic.SubscribeTagEvents(m.DB)`. 不在 model 包内挂, 因为 model 被 svc 依赖, svc 被 logic 依赖, 若 model 再 import logic 就形成循环
 
 **当前事件:**
-- `TagDeleted{TagID, IsSystem, UserID}` — 由 DeleteTagLogic 发布; 订阅者级联清 `word_tags`
+- `Tag().Deleted() → TagDeletedPayload{TagID, IsSystem, UserID}` — DeleteTagLogic publish, dictionary 包同 logic 文件订阅级联清 `word_tags`
 
-**故障语义:** PublishAsync 后进程崩 → 关联未清; 启动时 `ReapOrphanWordTags` 兜底 `DELETE FROM word_tags WHERE tag_id NOT IN (SELECT id FROM tags)`
+**故障语义:** `PublishAsync` 后进程崩 → 关联未清; main 启动调用 `dictlogic.ReapOrphanWordTags` 兜底 `DELETE FROM word_tags WHERE tag_id NOT IN (SELECT id FROM tags)`

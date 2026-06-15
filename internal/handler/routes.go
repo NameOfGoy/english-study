@@ -530,6 +530,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: user.LoginWxHandler(serverCtx),
 			},
 			{
+				// 用户模块/微信关联已有账号(输账号密码绑定wxid)
+				Method:  http.MethodPost,
+				Path:    "/login/wx/bind",
+				Handler: user.BindWxHandler(serverCtx),
+			},
+			{
 				// 用户模块/用户注册
 				Method:  http.MethodPost,
 				Path:    "/register",

@@ -4,11 +4,13 @@ import (
 	"context"
 	"english-study/internal/errors"
 	"english-study/internal/utils"
+	e "errors"
 
 	"english-study/internal/svc"
 	"english-study/internal/types"
 
 	"github.com/zeromicro/go-zero/core/logx"
+	"gorm.io/gorm"
 )
 
 type UpdateUserInfoLogic struct {
@@ -39,7 +41,20 @@ func (l *UpdateUserInfoLogic) UpdateUserInfo(req *types.UpdateUserInfoReq) (resp
 	}
 	// 2. 更新
 	user.Username = req.UserInfo.Name
-	user.Account = req.UserInfo.Account
+	// 账号: openid 自动注册的随机账号允许用户改, 但只能改 1 次
+	if req.UserInfo.Account != "" && req.UserInfo.Account != user.Account {
+		if user.AccountRenamed {
+			return nil, errors.ErrorRequestParamError("账号只能修改一次")
+		}
+		ug := l.svcCtx.Model.Gen.User
+		if _, qerr := ug.WithContext(l.ctx).Where(ug.Account.Eq(req.UserInfo.Account)).First(); qerr == nil {
+			return nil, errors.ErrorAccountExistError("账号已被占用")
+		} else if !e.Is(qerr, gorm.ErrRecordNotFound) {
+			return nil, errors.ErrorDatabaseQueryError("查询账号失败").WithCause(qerr)
+		}
+		user.Account = req.UserInfo.Account
+		user.AccountRenamed = true
+	}
 	user.Phone = req.UserInfo.Phone
 	user.Email = req.UserInfo.Email
 	user.Avatar = utils.ToOssPath(types.OssBucket, req.UserInfo.Avatar)
