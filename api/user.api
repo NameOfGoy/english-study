@@ -88,6 +88,14 @@ service englishstudy-api {
 	@doc "用户模块/更新用户信息"
 	@handler UpdateUserInfo
 	put /:id (UpdateUserInfoReq) returns (UpdateUserInfoResp)
+
+	@doc "用户模块/修改密码"
+	@handler ChangePassword
+	post /password (ChangePasswordReq) returns (ChangePasswordResp)
+
+	@doc "用户模块/首次设置账号密码(微信自动注册用户, 占位态才允许, 仅一次)"
+	@handler SetupCredentials
+	post /setup-credentials (SetupCredentialsReq) returns (SetupCredentialsResp)
 }
 
 type (
@@ -103,6 +111,20 @@ type (
 		UserInfo UserInfo `json:"data"` // 用户信息
 	}
 	UpdateUserInfoResp {
+		CommonReply
+	}
+	ChangePasswordReq {
+		OldPassword string `json:"old_password"` // 原密码
+		NewPassword string `json:"new_password"` // 新密码
+	}
+	ChangePasswordResp {
+		CommonReply
+	}
+	SetupCredentialsReq {
+		Account  string `json:"account"` // 新账号
+		Password string `json:"password"` // 新密码
+	}
+	SetupCredentialsResp {
 		CommonReply
 	}
 	UserInfo {

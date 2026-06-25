@@ -137,6 +137,27 @@ type ArticleDetailResp {
 	Data ArticleView `json:"data"`
 }
 
+// ===== 5.1 删除 =====
+
+type DeleteArticleReq {
+	ID uint `json:"id"` // 文章ID
+}
+
+type DeleteArticleResp {
+	CommonReply
+}
+
+// ===== 5.2 批量删除 =====
+
+type BatchDeleteArticleReq {
+	IDs []uint `json:"ids"` // 文章ID列表
+}
+
+type BatchDeleteArticleResp {
+	CommonReply
+	Deleted int `json:"deleted"` // 实际删除篇数
+}
+
 // ===== 6. 词条简要批量(按文本) =====
 
 type WordTextItem {
@@ -197,6 +218,14 @@ service englishstudy-api {
 	@doc "文章练习/详情"
 	@handler ArticleDetail
 	get /detail (ArticleDetailReq) returns (ArticleDetailResp)
+
+	@doc "文章练习/删除收录"
+	@handler DeleteArticle
+	post /delete (DeleteArticleReq) returns (DeleteArticleResp)
+
+	@doc "文章练习/批量删除收录"
+	@handler BatchDeleteArticle
+	post /batch-delete (BatchDeleteArticleReq) returns (BatchDeleteArticleResp)
 
 	@doc "文章练习/词条简要批量"
 	@handler WordsInfo

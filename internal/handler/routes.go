@@ -39,10 +39,22 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	server.AddRoutes(
 		[]rest.Route{
 			{
+				// 文章练习/批量删除收录
+				Method:  http.MethodPost,
+				Path:    "/batch-delete",
+				Handler: article.BatchDeleteArticleHandler(serverCtx),
+			},
+			{
 				// 文章练习/自选候选词
 				Method:  http.MethodGet,
 				Path:    "/candidates",
 				Handler: article.ArticleCandidatesHandler(serverCtx),
+			},
+			{
+				// 文章练习/删除收录
+				Method:  http.MethodPost,
+				Path:    "/delete",
+				Handler: article.DeleteArticleHandler(serverCtx),
 			},
 			{
 				// 文章练习/详情
@@ -112,6 +124,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodPost,
 				Path:    "/add",
 				Handler: dictionary.AddWordHandler(serverCtx),
+			},
+			{
+				// 字典模块/单词批量删除
+				Method:  http.MethodPost,
+				Path:    "/batch-delete",
+				Handler: dictionary.BatchDeleteWordHandler(serverCtx),
 			},
 			{
 				// 字典模块/单词删除
@@ -185,6 +203,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodPost,
 				Path:    "/add",
 				Handler: dictionary.AddWordPhraseHandler(serverCtx),
+			},
+			{
+				// 字典模块/短语批量删除
+				Method:  http.MethodPost,
+				Path:    "/batch-delete",
+				Handler: dictionary.BatchDeleteWordPhraseHandler(serverCtx),
 			},
 			{
 				// 字典模块/删除短语
@@ -564,6 +588,18 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodPut,
 				Path:    "/:id",
 				Handler: user.UpdateUserInfoHandler(serverCtx),
+			},
+			{
+				// 用户模块/修改密码
+				Method:  http.MethodPost,
+				Path:    "/password",
+				Handler: user.ChangePasswordHandler(serverCtx),
+			},
+			{
+				// 用户模块/首次设置账号密码(微信自动注册用户, 占位态才允许, 仅一次)
+				Method:  http.MethodPost,
+				Path:    "/setup-credentials",
+				Handler: user.SetupCredentialsHandler(serverCtx),
 			},
 		},
 		rest.WithJwt(serverCtx.Config.Auth.AccessSecret),

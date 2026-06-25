@@ -43,13 +43,39 @@ func (l *LoginWxLogic) LoginWx(req *types.UserLoginWxReq) (resp *types.UserLogin
 	user, err := ug.Where(ug.WxOpenID.Eq(openid)).WithContext(l.ctx).First()
 	if err != nil {
 		if e.Is(err, gorm.ErrRecordNotFound) {
-			// 未关联: 返回空 token(无错误), 前端据此弹窗。不在此自动注册。
+			// openid 未关联真实账号 → 发"游客"只读 token, 让用户先进首页浏览体验;
+			// 需要写操作(非 GET)时由守卫中间件拦下, 前端引导登录/注册(走 registerWx/bindWx)。
+			guest, gerr := ug.Where(ug.Account.Eq(utils.GuestAccountName)).WithContext(l.ctx).First()
+			if gerr != nil {
+				// 游客账号未配置 → 回退旧行为(空 token), 前端进 choice 让用户选注册/绑定, 不至于卡死。
+				logx.WithContext(l.ctx).Errorf("微信登录: 游客账号 %q 不存在, 回退空token: %v", utils.GuestAccountName, gerr)
+				return &types.UserLoginWxResp{}, nil
+			}
+			gToken, gtErr := utils.GenerateToken(l.svcCtx.Config.Auth.AccessSecret, time.Now().Unix(), l.svcCtx.Config.Auth.AccessExpire, guest.ID, guest.Username, utils.RoleGuest)
+			if gtErr != nil {
+				return nil, errors.ErrorTokenGenerateError("生成游客token失败").WithCause(gtErr)
+			}
+			gAvatar := guest.Avatar
+			if gAvatar != "" {
+				gAvatar = utils.ToOssUri(types.OssBucket, gAvatar)
+			}
 			masked := openid
 			if len(masked) > 6 {
 				masked = masked[:6] + "***"
 			}
-			logx.WithContext(l.ctx).Infof("微信登录: openid 未关联账号 openid_prefix=%s", masked)
-			return &types.UserLoginWxResp{}, nil
+			logx.WithContext(l.ctx).Infof("微信登录: openid 未关联, 发游客token openid_prefix=%s guest_uid=%d", masked, guest.ID)
+			return &types.UserLoginWxResp{
+				Token: gToken,
+				UserInfo: types.UserInfo{
+					ID:      guest.ID,
+					Name:    guest.Username,
+					Account: guest.Account,
+					Phone:   guest.Phone,
+					Email:   guest.Email,
+					Avatar:  gAvatar,
+					Role:    utils.RoleGuest,
+				},
+			}, nil
 		}
 		return nil, errors.ErrorDatabaseQueryError("查询用户失败").WithCause(err)
 	}

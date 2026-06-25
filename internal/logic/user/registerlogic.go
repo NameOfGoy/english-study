@@ -37,6 +37,10 @@ func (l *RegisterLogic) Register(req *types.UserRegisterReq) (resp *types.UserRe
 	if req.Account == "" || req.Password == "" || req.Name == "" {
 		return nil, errors.ErrorRequestParamError("参数错误")
 	}
+	// 1.1 密码强度校验(注册必须满足: 8~64 位 + 大写/小写/数字/符号 四含三)
+	if perr := utils.ValidatePasswordStrength(req.Password); perr != nil {
+		return nil, errors.ErrorRequestParamError(perr.Error())
+	}
 	// 2. 校验账号是否存在
 	_, err = l.svcCtx.Model.Gen.User.WithContext(l.ctx).Where(l.svcCtx.Model.Gen.User.Account.Eq(req.Account)).First()
 	if err != nil {

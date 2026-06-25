@@ -130,6 +130,42 @@ type BatchAddStardictResp struct {
 	Submitted int `json:"submitted"`
 }
 
+type BatchDeleteArticleReq struct {
+	IDs []uint `json:"ids"` // 文章ID列表
+}
+
+type BatchDeleteArticleResp struct {
+	CommonReply
+	Deleted int `json:"deleted"` // 实际删除篇数
+}
+
+type BatchDeleteWordPhraseReq struct {
+	IDs []uint `json:"ids"` // 短语ID列表
+}
+
+type BatchDeleteWordPhraseResp struct {
+	CommonReply
+	Deleted int `json:"deleted"` // 实际删除数
+}
+
+type BatchDeleteWordReq struct {
+	IDs []uint `json:"ids"` // 单词ID列表
+}
+
+type BatchDeleteWordResp struct {
+	CommonReply
+	Deleted int `json:"deleted"` // 实际删除数
+}
+
+type ChangePasswordReq struct {
+	OldPassword string `json:"old_password"` // 原密码
+	NewPassword string `json:"new_password"` // 新密码
+}
+
+type ChangePasswordResp struct {
+	CommonReply
+}
+
 type CommonReply struct {
 	Code   int32  `json:"code"`            // 状态码
 	Msg    string `json:"message"`         // 错误信息
@@ -147,6 +183,14 @@ type DashboardData struct {
 	TotalWords        int     `json:"total_words"`        // 总词条数
 	FinishedWords     int     `json:"finished_words"`     // 已掌握数
 	ProgressRate      float64 `json:"progress_rate"`      // 掌握进度 0-1
+}
+
+type DeleteArticleReq struct {
+	ID uint `json:"id"` // 文章ID
+}
+
+type DeleteArticleResp struct {
+	CommonReply
 }
 
 type DeletePhrasePictureReq struct {
@@ -619,6 +663,15 @@ type SearchStardictResp struct {
 type SelfSelectWord struct {
 	WordID   uint `json:"word_id"`
 	WordType int  `json:"word_type"` // 1-单词 2-短语
+}
+
+type SetupCredentialsReq struct {
+	Account  string `json:"account"`  // 新账号
+	Password string `json:"password"` // 新密码
+}
+
+type SetupCredentialsResp struct {
+	CommonReply
 }
 
 type SharePreviewTag struct {

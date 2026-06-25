@@ -109,6 +109,8 @@ func main() {
 	ctx := svc.NewServiceContext(c, vc, m, mi, wxc, dict, wordPicture, exampleGenerator, articleGenerator)
 	// 全局给所有响应加安全头 (X-Content-Type-Options 等)
 	server.Use(middleware.SecurityHeaders)
+	// 游客只读守卫: role=guest 的 token 只放行 GET, 写操作拦下引导登录(过审"先体验后授权")
+	server.Use(middleware.GuestGuard(c.Auth.AccessSecret))
 	handler.RegisterHandlers(server, ctx)
 
 	// AI 桥文件传输的两个路由手动注册 (不走 goctl): 上传是 multipart, 下载是流式 + 自定义 token 鉴权,

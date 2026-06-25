@@ -71,6 +71,73 @@ func (m *Model) CreateArticleWithWords(ctx context.Context, art *bean.Article, w
 	return art.ID, nil
 }
 
+// DeleteArticle 事务删除 article + 其 article_words(按 user 维度隔离, 防越权删他人文章).
+// 返回 affected: 命中并删除的 article 行数(0 表示文章不存在或不属于该用户).
+func (m *Model) DeleteArticle(ctx context.Context, id, userID uint) (affected int64, err error) {
+	tx := m.DB.Begin()
+	defer func() {
+		if err != nil {
+			if txe := tx.Rollback().Error; txe != nil {
+				logx.Errorf("DeleteArticle rollback failed: %v", txe)
+			}
+			return
+		}
+		if txe := tx.Commit().Error; txe != nil {
+			logx.Errorf("DeleteArticle commit failed: %v", txe)
+			err = txe
+		}
+	}()
+	// 先删 article(带 user_id 归属校验), affected=0 直接返回, 不动 article_words
+	res := tx.WithContext(ctx).Where("id = ? AND user_id = ?", id, userID).Delete(&bean.Article{})
+	if res.Error != nil {
+		return 0, res.Error
+	}
+	if res.RowsAffected == 0 {
+		return 0, nil
+	}
+	if err = tx.WithContext(ctx).
+		Where("article_id = ? AND user_id = ?", id, userID).
+		Delete(&bean.ArticleWord{}).Error; err != nil {
+		return 0, err
+	}
+	return res.RowsAffected, nil
+}
+
+// DeleteArticles 事务批量删除 article + 其 article_words(按 user 维度隔离, 只删属于该用户的).
+// 返回 affected: 实际命中并删除的 article 行数(传入的 id 里不存在/非本人的不计).
+func (m *Model) DeleteArticles(ctx context.Context, ids []uint, userID uint) (affected int64, err error) {
+	if len(ids) == 0 {
+		return 0, nil
+	}
+	tx := m.DB.Begin()
+	defer func() {
+		if err != nil {
+			if txe := tx.Rollback().Error; txe != nil {
+				logx.Errorf("DeleteArticles rollback failed: %v", txe)
+			}
+			return
+		}
+		if txe := tx.Commit().Error; txe != nil {
+			logx.Errorf("DeleteArticles commit failed: %v", txe)
+			err = txe
+		}
+	}()
+	res := tx.WithContext(ctx).Where("id IN ? AND user_id = ?", ids, userID).Delete(&bean.Article{})
+	if res.Error != nil {
+		return 0, res.Error
+	}
+	if res.RowsAffected == 0 {
+		return 0, nil
+	}
+	// article_words 同样带 user_id 约束, 即便 ids 含非本人文章也只清本人词行
+	if err = tx.WithContext(ctx).
+		Where("article_id IN ? AND user_id = ?", ids, userID).
+		Delete(&bean.ArticleWord{}).Error; err != nil {
+		return 0, err
+	}
+	return res.RowsAffected, nil
+}
+
 // GetArticleByID 取单篇文章(按 user 维度隔离).
 func (m *Model) GetArticleByID(ctx context.Context, id, userID uint) (*bean.Article, error) {
 	var a bean.Article

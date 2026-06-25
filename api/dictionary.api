@@ -22,6 +22,10 @@ service englishstudy-api {
 	@handler DeleteWord
 	post /delete (DeleteWordReq) returns (DeleteWordResp)
 
+	@doc "字典模块/单词批量删除"
+	@handler BatchDeleteWord
+	post /batch-delete (BatchDeleteWordReq) returns (BatchDeleteWordResp)
+
 	@doc "字典模块/单词更新"
 	@handler UpdateWord
 	post /update (UpdateWordReq) returns (UpdateWordResp)
@@ -148,6 +152,15 @@ type DeleteWordResp {
 	CommonReply
 }
 
+type BatchDeleteWordReq {
+	IDs []uint `json:"ids"` // 单词ID列表
+}
+
+type BatchDeleteWordResp {
+	CommonReply
+	Deleted int `json:"deleted"` // 实际删除数
+}
+
 type UpdateWordReq {
 	ID         uint      `json:"id"` // 单词ID
 	Word       string    `json:"word"` // 单词
@@ -229,6 +242,10 @@ service englishstudy-api {
 	@handler DeleteWordPhrase
 	delete /delete (DeleteWordPhraseReq) returns (DeleteWordPhraseResp)
 
+	@doc "字典模块/短语批量删除"
+	@handler BatchDeleteWordPhrase
+	post /batch-delete (BatchDeleteWordPhraseReq) returns (BatchDeleteWordPhraseResp)
+
 	@doc "字典模块/更新短语"
 	@handler UpdateWordPhrase
 	post /update (UpdateWordPhraseReq) returns (UpdateWordPhraseResp)
@@ -304,6 +321,15 @@ type DeleteWordPhraseReq {
 
 type DeleteWordPhraseResp {
 	CommonReply
+}
+
+type BatchDeleteWordPhraseReq {
+	IDs []uint `json:"ids"` // 短语ID列表
+}
+
+type BatchDeleteWordPhraseResp {
+	CommonReply
+	Deleted int `json:"deleted"` // 实际删除数
 }
 
 type UpdateWordPhraseReq {

@@ -25,7 +25,45 @@ const (
 	pbkdf2LegacyRounds   = 2048
 	pbkdf2LegacyKeySize  = 32
 	bcryptCost           = 12 // ~250ms on a 2024 laptop, 用户体验和强度平衡
+	// passwordSymbols 密码允许且计入"符号"类的安全符号白名单(明确不含 引号/反斜杠/空格/尖括号), 与前端同一份字符集
+	passwordSymbols = "!@#$%^&*()-_=+[]{};:,.?"
 )
+
+// ValidatePasswordStrength 校验密码强度(注册/改密用; 登录不调用, 否则历史弱密码会被锁死).
+// 规则: 长度 8~64; 仅允许 字母/数字/安全符号; 大写/小写/数字/符号 四类中至少含 3 类("4含3").
+func ValidatePasswordStrength(pwd string) error {
+	if len(pwd) < 8 {
+		return fmt.Errorf("密码至少 8 位")
+	}
+	if len(pwd) > 64 {
+		return fmt.Errorf("密码不超过 64 位")
+	}
+	var hasUpper, hasLower, hasDigit, hasSymbol bool
+	for _, r := range pwd {
+		switch {
+		case r >= 'A' && r <= 'Z':
+			hasUpper = true
+		case r >= 'a' && r <= 'z':
+			hasLower = true
+		case r >= '0' && r <= '9':
+			hasDigit = true
+		case strings.ContainsRune(passwordSymbols, r):
+			hasSymbol = true
+		default:
+			return fmt.Errorf("密码含不支持的字符, 仅允许字母/数字及 %s", passwordSymbols)
+		}
+	}
+	cats := 0
+	for _, ok := range []bool{hasUpper, hasLower, hasDigit, hasSymbol} {
+		if ok {
+			cats++
+		}
+	}
+	if cats < 3 {
+		return fmt.Errorf("密码需包含大写/小写/数字/符号中至少 3 类")
+	}
+	return nil
+}
 
 func pbkdf2Encode(password string, salt []byte) string {
 	dk := pbkdf2.Key([]byte(password), salt, pbkdf2LegacyRounds, pbkdf2LegacyKeySize, sha256.New)
@@ -205,7 +243,14 @@ func VerifyFileToken(secretKey, token string) (bucket, object string, err error)
 const (
 	RoleNormal = 0
 	RoleAdmin  = 1
+	// RoleGuest 游客: 微信登录但 openid 未注册时后端发的只读身份。
+	// 守卫中间件只放行游客的 GET(只读浏览), 写操作(非 GET)一律拦下引导登录。
+	RoleGuest = 2
 )
+
+// GuestAccountName 固定游客账号的 account 值。需预先建好该账号并 seed 示例数据(词/短语/文章),
+// 微信登录未命中真实账号时, 后端签发这个账号的只读 token, 供游客先浏览体验(过审"先体验后授权")。
+const GuestAccountName = "wxappguest"
 
 type UserInfo struct {
 	ID       uint   `json:"id"`
